@@ -146,10 +146,83 @@ class Fun(commands.Cog):
             lines.append(f"`#{i:>2}` **{name}** — Lvl {p.get('level',1)} · {p.get('coins',0)} coins")
         await ctx.send(embed=embeds.info("Leaderboard", "\n".join(lines) or "No data yet."))
 
-    # -------- misc --------
-    @commands.hybrid_command(name="coinflip", description="Flip a coin.")
-    async def coinflip(self, ctx):
-        await ctx.send(embed=embeds.info("Coinflip", random.choice(["**Heads**", "**Tails**"])))
+    # -------- gambling --------
+    @commands.hybrid_command(
+        name="coinflip",
+        description="Flip a coin. Optionally bet coins: double or lose it all.",
+    )
+    @app_commands.describe(
+        bet="Coins to wager (or 'all'). Win = double, lose = gone.",
+        side="Your call: heads or tails.",
+    )
+    async def coinflip(self, ctx: commands.Context, bet: str | None = None, side: str | None = None):
+        # Free flip — no args.
+        if bet is None:
+            await ctx.send(embed=embeds.info("Coinflip", random.choice(["**Heads**", "**Tails**"])))
+            return
+
+        d = _load(); p = _profile(d, ctx.author.id)
+        balance = p.get("coins", 0)
+
+        # Parse the wager.
+        bet_l = bet.strip().lower()
+        if bet_l in ("all", "max"):
+            amount = balance
+        else:
+            try:
+                amount = int(bet_l)
+            except ValueError:
+                await ctx.send(embed=embeds.danger("Bad bet", "Bet must be a number or `all`."))
+                return
+
+        if amount <= 0:
+            await ctx.send(embed=embeds.danger("Bad bet", "Bet must be positive."))
+            return
+        if amount > balance:
+            await ctx.send(embed=embeds.danger(
+                "Not enough coins",
+                f"You only have **{balance}** coins. Earn more with `!daily`.",
+            ))
+            return
+
+        # Pick a side (random if not specified).
+        side_l = (side or "").strip().lower()
+        if side_l in ("h", "head", "heads"):
+            choice = "heads"
+        elif side_l in ("t", "tail", "tails"):
+            choice = "tails"
+        elif side_l == "":
+            choice = random.choice(["heads", "tails"])
+        else:
+            await ctx.send(embed=embeds.danger("Bad side", "Pick `heads` or `tails` (or leave blank)."))
+            return
+
+        result = random.choice(["heads", "tails"])
+        won = result == choice
+
+        if won:
+            p["coins"] = balance + amount
+            _grant_xp(p, 5); _save(d)
+            e = embeds.success(
+                f"{settings.emoji.spark} It's {result.title()} — you win!",
+                f"You called **{choice}** and doubled your bet.\n"
+                f"**+{amount}** coins · new balance: **{p['coins']}**",
+            )
+        else:
+            p["coins"] = balance - amount
+            _save(d)
+            e = embeds.danger(
+                f"It's {result.title()} — you lose.",
+                f"You called **{choice}**. Coin disagreed.\n"
+                f"**−{amount}** coins · new balance: **{p['coins']}**",
+            )
+        await ctx.send(embed=e)
+
+    @commands.hybrid_command(name="gamble", description="Pure 50/50: bet coins, win double or lose it all.")
+    @app_commands.describe(bet="Coins to wager (or 'all').")
+    async def gamble(self, ctx: commands.Context, bet: str):
+        # Same mechanics as coinflip but always random side.
+        await self.coinflip(ctx, bet=bet, side=None)
 
     @commands.hybrid_command(name="roll", description="Roll a dice (default d20).")
     async def roll(self, ctx, sides: int = 20):
