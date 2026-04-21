@@ -22,12 +22,19 @@ def _parse_duration(text: str) -> Optional[timedelta]:
 
 
 class Moderation(commands.Cog):
+    """Moderation commands. ALL of these require Discord permissions —
+    a regular member with no mod perms cannot run them, neither via prefix
+    nor via slash. Slash commands are also hidden from non-mods in the UI
+    via `default_permissions`.
+    """
+
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     # ---------- KICK ----------
     @commands.hybrid_command(name="kick", description="Kick a member from the server.")
     @commands.has_permissions(kick_members=True)
+    @app_commands.default_permissions(kick_members=True)
     @app_commands.describe(member="Member to kick", reason="Why")
     async def kick(self, ctx: commands.Context, member: discord.Member, *, reason: str = "No reason provided"):
         await member.kick(reason=f"{ctx.author}: {reason}")
@@ -36,6 +43,7 @@ class Moderation(commands.Cog):
     # ---------- BAN ----------
     @commands.hybrid_command(name="ban", description="Ban a member.")
     @commands.has_permissions(ban_members=True)
+    @app_commands.default_permissions(ban_members=True)
     @app_commands.describe(member="Member to ban", reason="Why", delete_days="Days of msgs to wipe (0-7)")
     async def ban(self, ctx: commands.Context, member: discord.Member, delete_days: int = 0, *, reason: str = "No reason provided"):
         await member.ban(reason=f"{ctx.author}: {reason}", delete_message_days=max(0, min(7, delete_days)))
@@ -44,6 +52,7 @@ class Moderation(commands.Cog):
     # ---------- UNBAN ----------
     @commands.hybrid_command(name="unban", description="Unban a user by ID or name#tag.")
     @commands.has_permissions(ban_members=True)
+    @app_commands.default_permissions(ban_members=True)
     async def unban(self, ctx: commands.Context, *, user: str):
         target = None
         async for entry in ctx.guild.bans():
@@ -59,6 +68,7 @@ class Moderation(commands.Cog):
     # ---------- MUTE / TIMEOUT ----------
     @commands.hybrid_command(name="mute", description="Timeout a member. Duration like 10m, 1h, 1d.")
     @commands.has_permissions(moderate_members=True)
+    @app_commands.default_permissions(moderate_members=True)
     @app_commands.describe(member="Member", duration="e.g. 10m, 2h, 1d", reason="Why")
     async def mute(self, ctx: commands.Context, member: discord.Member, duration: str = "10m", *, reason: str = "No reason provided"):
         td = _parse_duration(duration)
@@ -71,6 +81,7 @@ class Moderation(commands.Cog):
 
     @commands.hybrid_command(name="unmute", description="Remove timeout from a member.")
     @commands.has_permissions(moderate_members=True)
+    @app_commands.default_permissions(moderate_members=True)
     async def unmute(self, ctx: commands.Context, member: discord.Member, *, reason: str = "Lifted"):
         await member.timeout(None, reason=f"{ctx.author}: {reason}")
         await ctx.send(embed=embeds.mod_action("Member unmuted", member, ctx.author, reason, settings.success_color))
@@ -78,6 +89,7 @@ class Moderation(commands.Cog):
     # ---------- WARN ----------
     @commands.hybrid_command(name="warn", description="Warn a member (DM + log).")
     @commands.has_permissions(moderate_members=True)
+    @app_commands.default_permissions(moderate_members=True)
     async def warn(self, ctx: commands.Context, member: discord.Member, *, reason: str):
         try:
             await member.send(embed=embeds.warn(
@@ -91,6 +103,7 @@ class Moderation(commands.Cog):
     # ---------- PURGE ----------
     @commands.hybrid_command(name="purge", description="Delete the last N messages in this channel.")
     @commands.has_permissions(manage_messages=True)
+    @app_commands.default_permissions(manage_messages=True)
     async def purge(self, ctx: commands.Context, amount: int = 10):
         amount = max(1, min(100, amount))
         if ctx.interaction:
@@ -105,6 +118,7 @@ class Moderation(commands.Cog):
     # ---------- SLOWMODE ----------
     @commands.hybrid_command(name="slowmode", description="Set channel slowmode in seconds (0 to disable).")
     @commands.has_permissions(manage_channels=True)
+    @app_commands.default_permissions(manage_channels=True)
     async def slowmode(self, ctx: commands.Context, seconds: int = 0):
         seconds = max(0, min(21600, seconds))
         await ctx.channel.edit(slowmode_delay=seconds)
@@ -113,6 +127,7 @@ class Moderation(commands.Cog):
     # ---------- LOCK / UNLOCK ----------
     @commands.hybrid_command(name="lock", description="Lock this channel for @everyone.")
     @commands.has_permissions(manage_channels=True)
+    @app_commands.default_permissions(manage_channels=True)
     async def lock(self, ctx: commands.Context):
         overwrite = ctx.channel.overwrites_for(ctx.guild.default_role)
         overwrite.send_messages = False
@@ -121,6 +136,7 @@ class Moderation(commands.Cog):
 
     @commands.hybrid_command(name="unlock", description="Unlock this channel for @everyone.")
     @commands.has_permissions(manage_channels=True)
+    @app_commands.default_permissions(manage_channels=True)
     async def unlock(self, ctx: commands.Context):
         overwrite = ctx.channel.overwrites_for(ctx.guild.default_role)
         overwrite.send_messages = None
@@ -130,20 +146,25 @@ class Moderation(commands.Cog):
     # ---------- ROLE ASSIGN ----------
     @commands.hybrid_command(name="addrole", description="Give a role to a member.")
     @commands.has_permissions(manage_roles=True)
+    @app_commands.default_permissions(manage_roles=True)
     async def addrole(self, ctx: commands.Context, member: discord.Member, *, role: discord.Role):
         await member.add_roles(role, reason=f"{ctx.author}: addrole")
         await ctx.send(embed=embeds.success("Role granted", f"{member.mention} now has {role.mention}."))
 
     @commands.hybrid_command(name="removerole", description="Remove a role from a member.")
     @commands.has_permissions(manage_roles=True)
+    @app_commands.default_permissions(manage_roles=True)
     async def removerole(self, ctx: commands.Context, member: discord.Member, *, role: discord.Role):
         await member.remove_roles(role, reason=f"{ctx.author}: removerole")
         await ctx.send(embed=embeds.warn("Role removed", f"{role.mention} taken from {member.mention}."))
 
     # ---------- ERROR HANDLER ----------
     async def cog_command_error(self, ctx: commands.Context, error: Exception):
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.send(embed=embeds.danger("Permission denied", "You don't have permission for that."))
+        if isinstance(error, (commands.MissingPermissions, commands.CheckFailure)):
+            await ctx.send(embed=embeds.danger(
+                "Not allowed",
+                "Only server moderators can run that command. You're missing the required permission.",
+            ), ephemeral=True if ctx.interaction else False)
         elif isinstance(error, commands.BadArgument):
             await ctx.send(embed=embeds.danger("Bad input", str(error)))
         else:

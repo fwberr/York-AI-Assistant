@@ -139,3 +139,19 @@ class MemoryStore:
 
     def known_users(self) -> List[int]:
         return list(self._users.keys())
+
+    def attached_user_for(self, channel_id: int) -> int | None:
+        """Return who currently owns this channel's conversation (or None)."""
+        st = self._channels.get(channel_id)
+        if not st or st.attached_user_id is None:
+            return None
+        if time.time() - st.attached_at > 20 * 60:
+            self.detach(channel_id)
+            return None
+        return st.attached_user_id
+
+    def clear_user(self, user_id: int) -> None:
+        """Forget everything York knows about a user."""
+        if user_id in self._users:
+            del self._users[user_id]
+            self.save()
