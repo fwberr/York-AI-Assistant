@@ -70,8 +70,7 @@ async def chat(messages: List[dict]) -> str:
         resp = await c.chat.completions.create(
             model=settings.openai_model,
             messages=messages,
-            temperature=0.85,
-            max_tokens=400,
+            max_completion_tokens=8192,
         )
         return (resp.choices[0].message.content or "").strip()
     except Exception as exc:  # noqa: BLE001
