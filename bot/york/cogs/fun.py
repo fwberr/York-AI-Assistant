@@ -48,7 +48,7 @@ def _xp_for_next(level: int) -> int:
     Each level needs noticeably more XP than the last, so growth slows
     naturally the higher you go.
     """
-    return 5 * (level ** 2) + 50 * level + 100
+    return 25 * (level ** 2) + 250 * level + 500
 
 
 def _grant_xp(p: dict, amount: int) -> tuple[bool, int, int]:
