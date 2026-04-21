@@ -36,19 +36,52 @@ def _save(d: Dict[str, dict]) -> None:
 def _profile(d: Dict[str, dict], uid: int) -> dict:
     return d.setdefault(str(uid), {
         "coins": 0, "rep": 0, "xp": 0, "level": 1,
-        "last_daily": 0, "last_rep": 0,
+        "last_daily": 0, "last_rep": 0, "last_chat_xp": 0,
         "hugs_given": 0, "pets_given": 0, "slaps_given": 0,
     })
 
 
-def _grant_xp(p: dict, amount: int) -> tuple[bool, int]:
+def _grant_xp(p: dict, amount: int) -> tuple[bool, int, int]:
+    """Add XP, auto-leveling. Returns (did_level, new_level, coin_bonus)."""
     p["xp"] += amount
     leveled = False
+    coin_bonus = 0
     while p["xp"] >= p["level"] * 100:
         p["xp"] -= p["level"] * 100
         p["level"] += 1
         leveled = True
-    return leveled, p["level"]
+        # Reward: more coins the higher your level.
+        bonus = 25 * p["level"]
+        p["coins"] += bonus
+        coin_bonus += bonus
+    return leveled, p["level"], coin_bonus
+
+
+# Anime-style SFW reaction GIF endpoints. nekos.best is a public API
+# with curated SFW content — no auth, no NSFW endpoints exposed here.
+_GIF_ENDPOINTS = {
+    "hug":  "https://nekos.best/api/v2/hug",
+    "pet":  "https://nekos.best/api/v2/pat",
+    "slap": "https://nekos.best/api/v2/slap",
+}
+
+
+async def _fetch_gif(action: str) -> str | None:
+    url = _GIF_ENDPOINTS.get(action)
+    if not url:
+        return None
+    try:
+        async with aiohttp.ClientSession() as s:
+            async with s.get(url, timeout=aiohttp.ClientTimeout(total=6)) as r:
+                if r.status != 200:
+                    return None
+                data = await r.json()
+                results = data.get("results") or []
+                if not results:
+                    return None
+                return results[0].get("url")
+    except Exception:
+        return None
 
 
 _8BALL = [
@@ -64,29 +97,83 @@ class Fun(commands.Cog):
         self.bot = bot
 
     # -------- social actions --------
-    async def _social(self, ctx: commands.Context, target: discord.Member, verb_self: str, verb_other: str, key: str):
+    async def _social(
+        self,
+        ctx: commands.Context,
+        target: discord.Member,
+        action: str,
+        verb_self: str,
+        verb_other: str,
+        key: str,
+    ):
         d = _load(); p = _profile(d, ctx.author.id); p[key] = p.get(key, 0) + 1
-        leveled, lvl = _grant_xp(p, 5); _save(d)
+        leveled, lvl, bonus = _grant_xp(p, 5); _save(d)
+
         if target.id == ctx.author.id:
             desc = f"{ctx.author.mention} {verb_self}."
         else:
             desc = f"{ctx.author.mention} {verb_other} {target.mention}."
-        e = embeds.info(f"{settings.emoji.spark}  {key.replace('_given','').title()}!", desc)
+
+        e = embeds.info(f"{settings.emoji.spark}  {action.title()}!", desc)
+        gif = await _fetch_gif(action)
+        if gif:
+            e.set_image(url=gif)
         if leveled:
-            e.set_footer(text=f"Level up! You are now level {lvl} · {settings.bot_name} · built by {settings.creator}")
+            e.set_footer(
+                text=f"Level up! You are now level {lvl} (+{bonus} coins) · "
+                     f"{settings.bot_name} · built by {settings.creator}"
+            )
         await ctx.send(embed=e)
 
-    @commands.hybrid_command(name="hug", description="Hug a member.")
+    @commands.hybrid_command(name="hug", description="Hug a member (with a random anime GIF).")
     async def hug(self, ctx, member: discord.Member):
-        await self._social(ctx, member, "hugs themselves. Aww.", "hugs", "hugs_given")
+        await self._social(ctx, member, "hug", "hugs themselves. Aww.", "hugs", "hugs_given")
 
-    @commands.hybrid_command(name="pet", description="Pet a member.")
+    @commands.hybrid_command(name="pet", description="Pet a member (with a random anime GIF).")
     async def pet(self, ctx, member: discord.Member):
-        await self._social(ctx, member, "pats their own head.", "pets", "pets_given")
+        await self._social(ctx, member, "pet", "pats their own head.", "pets", "pets_given")
 
-    @commands.hybrid_command(name="slap", description="Slap a member.")
+    @commands.hybrid_command(name="slap", description="Slap a member (with a random anime GIF).")
     async def slap(self, ctx, member: discord.Member):
-        await self._social(ctx, member, "slapped themselves. Why.", "slaps", "slaps_given")
+        await self._social(ctx, member, "slap", "slapped themselves. Why.", "slaps", "slaps_given")
+
+    # -------- passive chat XP --------
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message) -> None:
+        """Award XP for chatting in the server. 60s cooldown per user
+        to keep spam-farming in check. Higher levels = bigger coin payouts
+        on level-up (handled in _grant_xp)."""
+        if message.author.bot or not message.guild:
+            return
+        if not (message.content or "").strip():
+            return
+        # Don't award XP for bot commands themselves.
+        if message.content.startswith("!"):
+            return
+
+        d = _load(); p = _profile(d, message.author.id)
+        now = time.time()
+        if now - p.get("last_chat_xp", 0) < 60:
+            return
+        p["last_chat_xp"] = now
+
+        gained = random.randint(8, 18)
+        leveled, lvl, bonus = _grant_xp(p, gained)
+        # Small per-message coin trickle that scales with level.
+        p["coins"] += 1 + (lvl // 5)
+        _save(d)
+
+        if leveled:
+            try:
+                await message.channel.send(
+                    embed=embeds.success(
+                        f"{settings.emoji.spark} Level up!",
+                        f"{message.author.mention} reached **level {lvl}** "
+                        f"and earned **{bonus}** bonus coins.",
+                    )
+                )
+            except discord.HTTPException:
+                pass
 
     # -------- economy / rep --------
     @commands.hybrid_command(name="daily", description="Claim your daily coins.")
