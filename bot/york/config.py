@@ -36,7 +36,7 @@ class Settings:
     openai_key: str = field(default_factory=lambda: os.getenv("OPENAI_API_KEY", ""))
     proxy_key: str = field(default_factory=lambda: os.getenv("AI_INTEGRATIONS_OPENAI_API_KEY", ""))
     proxy_base_url: str = field(default_factory=lambda: os.getenv("AI_INTEGRATIONS_OPENAI_BASE_URL", ""))
-    openai_model: str = field(default_factory=lambda: os.getenv("YORK_MODEL", "gpt-5-mini"))
+    openai_model: str = field(default_factory=lambda: os.getenv("YORK_MODEL", "gpt-5-nano"))
 
     bot_name: str = "York"
     creator: str = "Berry"

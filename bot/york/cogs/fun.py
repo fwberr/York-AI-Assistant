@@ -37,7 +37,7 @@ def _profile(d: Dict[str, dict], uid: int) -> dict:
     return d.setdefault(str(uid), {
         "coins": 0, "rep": 0, "xp": 0, "level": 1,
         "last_daily": 0, "last_rep": 0, "last_chat_xp": 0,
-        "hugs_given": 0, "pets_given": 0, "slaps_given": 0,
+        "hugs_given": 0, "pets_given": 0, "slaps_given": 0, "kisses_given": 0,
     })
 
 
@@ -74,6 +74,7 @@ _GIF_ENDPOINTS = {
     "hug":  "https://nekos.best/api/v2/hug",
     "pet":  "https://nekos.best/api/v2/pat",
     "slap": "https://nekos.best/api/v2/slap",
+    "kiss": "https://nekos.best/api/v2/kiss",
 }
 
 
@@ -147,6 +148,10 @@ class Fun(commands.Cog):
     @commands.hybrid_command(name="slap", description="Slap a member (with a random anime GIF).")
     async def slap(self, ctx, member: discord.Member):
         await self._social(ctx, member, "slap", "slapped themselves. Why.", "slaps", "slaps_given")
+
+    @commands.hybrid_command(name="kiss", description="Kiss a member (with a random anime GIF).")
+    async def kiss(self, ctx, member: discord.Member):
+        await self._social(ctx, member, "kiss", "blows themselves a kiss.", "kisses", "kisses_given")
 
     # -------- passive chat XP --------
     @commands.Cog.listener()

@@ -112,15 +112,13 @@ class Conversation(commands.Cog):
         prompt: Optional[str] = None
         if wake_payload is not None:
             prompt = wake_payload
-            mem.attach(cid, uid)
         elif is_mention:
             cleaned = re.sub(rf"<@!?{self.bot.user.id}>", "", text).strip()
             prompt = cleaned or "(no message)"
-            mem.attach(cid, uid)
-        elif attached:
-            prompt = text
-            mem.touch_attachment(cid, uid)
 
+        # One-shot mode: York only replies when explicitly addressed
+        # (wake phrase or @mention). Whatever you type next is just normal
+        # chatter unless you call him again.
         if prompt is None:
             return
 
