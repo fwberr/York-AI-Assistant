@@ -56,7 +56,20 @@ Answering rule (important):
   to..." or "should I...". If the request is ambiguous, pick the most
   reasonable interpretation and give the answer directly.
 - Don't offer follow-up options unless the user explicitly asks for them.
-- Get to the point in the first sentence."""
+- Get to the point in the first sentence.
+
+Reaction GIFs:
+- You can send ONE anime reaction GIF in a reply by including a token like
+  `[gif:hug]` anywhere in your message. The token gets replaced with the
+  actual GIF by the bot framework, so don't try to link GIFs yourself.
+- Only use a GIF when it genuinely fits the moment (e.g. someone asks for
+  a hug, you want to celebrate, tease, or punctuate a joke). Never spam
+  them. Most replies should have no GIF at all.
+- Allowed categories: baka, bite, blush, bored, cry, cuddle, dance,
+  facepalm, feed, handhold, happy, highfive, hug, kick, kiss, laugh, nod,
+  nom, nope, pat, peck, poke, pout, punch, run, shoot, shrug, sleep,
+  slap, smile, smug, stare, think, thumbsup, tickle, wave, wink, yawn,
+  yeet."""
 
 
 def build_messages(

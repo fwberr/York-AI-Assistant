@@ -68,20 +68,24 @@ def _grant_xp(p: dict, amount: int) -> tuple[bool, int, int]:
     return leveled, p["level"], coin_bonus
 
 
-# Anime-style SFW reaction GIF endpoints. nekos.best is a public API
-# with curated SFW content — no auth, no NSFW endpoints exposed here.
-_GIF_ENDPOINTS = {
-    "hug":  "https://nekos.best/api/v2/hug",
-    "pet":  "https://nekos.best/api/v2/pat",
-    "slap": "https://nekos.best/api/v2/slap",
-    "kiss": "https://nekos.best/api/v2/kiss",
+# Anime-style SFW reaction GIF categories served by nekos.best. Public,
+# no auth, curated SFW only. NSFW endpoints are never referenced here.
+GIF_CATEGORIES: set[str] = {
+    "baka", "bite", "blush", "bored", "cry", "cuddle", "dance", "facepalm",
+    "feed", "handhold", "happy", "highfive", "hug", "kick", "kiss", "laugh",
+    "nod", "nom", "nope", "pat", "peck", "poke", "pout", "punch", "run",
+    "shoot", "shrug", "sleep", "slap", "smile", "smug", "stare", "think",
+    "thumbsup", "tickle", "wave", "wink", "yawn", "yeet",
 }
+# Aliases between user-facing action names and nekos.best endpoint names.
+_GIF_ALIAS = {"pet": "pat"}
 
 
-async def _fetch_gif(action: str) -> str | None:
-    url = _GIF_ENDPOINTS.get(action)
-    if not url:
+async def fetch_gif(action: str) -> str | None:
+    cat = _GIF_ALIAS.get(action.lower(), action.lower())
+    if cat not in GIF_CATEGORIES:
         return None
+    url = f"https://nekos.best/api/v2/{cat}"
     try:
         async with aiohttp.ClientSession() as s:
             async with s.get(url, timeout=aiohttp.ClientTimeout(total=6)) as r:
@@ -94,6 +98,10 @@ async def _fetch_gif(action: str) -> str | None:
                 return results[0].get("url")
     except Exception:
         return None
+
+
+# Backwards-compat alias for code that still imports the old name.
+_fetch_gif = fetch_gif
 
 
 _8BALL = [
