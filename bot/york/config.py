@@ -34,7 +34,9 @@ class Emoji:
 class Settings:
     discord_token: str = field(default_factory=lambda: os.getenv("DISCORD_BOT_TOKEN", ""))
     openai_key: str = field(default_factory=lambda: os.getenv("OPENAI_API_KEY", ""))
-    openai_model: str = field(default_factory=lambda: os.getenv("YORK_MODEL", "gpt-4o-mini"))
+    proxy_key: str = field(default_factory=lambda: os.getenv("AI_INTEGRATIONS_OPENAI_API_KEY", ""))
+    proxy_base_url: str = field(default_factory=lambda: os.getenv("AI_INTEGRATIONS_OPENAI_BASE_URL", ""))
+    openai_model: str = field(default_factory=lambda: os.getenv("YORK_MODEL", "gpt-5-mini"))
 
     bot_name: str = "York"
     creator: str = "Berry"

@@ -44,7 +44,7 @@ class ReplyView(discord.ui.View):
         self.cog = cog
         self.user_id = user_id
 
-    @discord.ui.button(label="Detach", style=discord.ButtonStyle.secondary, emoji="✦")
+    @discord.ui.button(label="Detach", style=discord.ButtonStyle.secondary)
     async def detach_btn(self, interaction: discord.Interaction, _: discord.ui.Button):
         if interaction.user.id != self.user_id:
             await interaction.response.send_message("Only the person I'm chatting with can detach me.", ephemeral=True)
@@ -55,7 +55,7 @@ class ReplyView(discord.ui.View):
             ephemeral=True,
         )
 
-    @discord.ui.button(label="Suggest something", style=discord.ButtonStyle.primary, emoji="✺")
+    @discord.ui.button(label="Suggest something", style=discord.ButtonStyle.primary)
     async def suggest_btn(self, interaction: discord.Interaction, _: discord.ui.Button):
         await interaction.response.defer(thinking=True)
         await self.cog.respond_to(

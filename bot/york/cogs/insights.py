@@ -15,9 +15,9 @@ class RoleSelect(discord.ui.Select):
     def __init__(self, roles: List[discord.Role]):
         options = [
             discord.SelectOption(
-                label=r.name[:90],
+                label=(r.name or "role")[:90],
                 value=str(r.id),
-                description=f"{len(r.members)} members · pos {r.position}"[:90],
+                description=f"{len(r.members)} members - pos {r.position}"[:90],
             )
             for r in roles[:25]
         ]

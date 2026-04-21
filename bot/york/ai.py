@@ -16,10 +16,14 @@ _client: AsyncOpenAI | None = None
 
 def client() -> AsyncOpenAI | None:
     global _client
-    if not settings.openai_key:
+    api_key = settings.proxy_key or settings.openai_key
+    if not api_key:
         return None
     if _client is None:
-        _client = AsyncOpenAI(api_key=settings.openai_key)
+        kwargs = {"api_key": api_key}
+        if settings.proxy_base_url:
+            kwargs["base_url"] = settings.proxy_base_url
+        _client = AsyncOpenAI(**kwargs)
     return _client
 
 

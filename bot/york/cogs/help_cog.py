@@ -48,7 +48,7 @@ class HelpSelect(discord.ui.Select):
     def __init__(self):
         super().__init__(
             placeholder="Pick a category…",
-            options=[discord.SelectOption(label=name, value=name, emoji="◆") for name in CATEGORIES],
+            options=[discord.SelectOption(label=name, value=name) for name in CATEGORIES],
         )
 
     async def callback(self, interaction: discord.Interaction):
