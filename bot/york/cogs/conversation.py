@@ -49,7 +49,7 @@ class ReplyView(discord.ui.View):
         if interaction.user.id != self.user_id:
             await interaction.response.send_message("Only the person I'm chatting with can detach me.", ephemeral=True)
             return
-        self.cog.bot.memory.detach(interaction.channel_id)
+        self.cog.bot.memory.detach(interaction.channel_id, self.user_id)
         await interaction.response.send_message(
             embed=embeds.info("Detaching", "Standing down. Say **Hey York** anytime."),
             ephemeral=True,
@@ -85,27 +85,25 @@ class Conversation(commands.Cog):
             return
 
         mem = self.bot.memory
+        cid = message.channel.id
+        uid = message.author.id
 
-        # PASSIVE LEARNING — York observes everyone's speech style, even
-        # when he's not being addressed. He never replies from this; he
-        # just remembers how each person talks so future replies feel right.
+        # PASSIVE LEARNING — York observes everyone's speech style on every
+        # message in the server (whether he's being talked to or not) so his
+        # replies can mirror how each person actually writes.
         for note in ai.infer_style_notes(text):
-            mem.add_style_note(message.author.id, note)
+            mem.add_style_note(uid, note)
 
-        owner_id = mem.attached_user_for(message.channel.id)
+        attached = mem.is_attached(cid, uid)
 
-        # detach (only the attached user can detach York)
-        if owner_id == message.author.id and _is_detach(text):
-            mem.detach(message.channel.id)
+        # Detach only ends THIS user's session — other people's sessions
+        # in the same channel keep going.
+        if attached and _is_detach(text):
+            mem.detach(cid, uid)
             await message.reply(
                 embed=embeds.info("Standing down", f"{settings.emoji.wave} Talk to you later. Say **Hey York** to bring me back."),
                 mention_author=False,
             )
-            return
-
-        # If someone else owns the channel, ignore everyone else completely —
-        # York only listens to the person who activated him until they detach.
-        if owner_id is not None and owner_id != message.author.id:
             return
 
         wake_payload = _is_wake(text)
@@ -114,43 +112,19 @@ class Conversation(commands.Cog):
         prompt: Optional[str] = None
         if wake_payload is not None:
             prompt = wake_payload
-            mem.attach(message.channel.id, message.author.id)
+            mem.attach(cid, uid)
         elif is_mention:
             cleaned = re.sub(rf"<@!?{self.bot.user.id}>", "", text).strip()
             prompt = cleaned or "(no message)"
-            mem.attach(message.channel.id, message.author.id)
-        elif owner_id == message.author.id:
+            mem.attach(cid, uid)
+        elif attached:
             prompt = text
-            mem.touch_attachment(message.channel.id)
+            mem.touch_attachment(cid, uid)
 
         if prompt is None:
             return
 
         await self.respond_to(message.channel, message.author, prompt, reply_to=message)
-
-    # --------- self-awareness commands ---------
-    @commands.hybrid_command(name="style", description="Show what York has learned about how you talk.")
-    async def style(self, ctx: commands.Context, member: discord.Member | None = None):
-        m = member or ctx.author
-        notes = self.bot.memory.style_notes_for(m.id)
-        msgs = len(self.bot.memory.transcript_for(m.id))
-        if not notes:
-            await ctx.send(embed=embeds.info(
-                f"What I know about {m.display_name}",
-                "Not much yet — I learn passively while you talk in the server. "
-                f"({msgs} messages remembered between us so far.)",
-            ))
-            return
-        body = "\n".join(f"{settings.emoji.spark} {n}" for n in notes)
-        await ctx.send(embed=embeds.info(
-            f"What I've picked up about {m.display_name}",
-            f"{body}\n\n*Based on {msgs} of our messages I remember.*",
-        ))
-
-    @commands.hybrid_command(name="forgetme", description="Make York forget everything he's learned about you.")
-    async def forgetme(self, ctx: commands.Context):
-        self.bot.memory.clear_user(ctx.author.id)
-        await ctx.send(embed=embeds.success("Memory wiped", "I've cleared everything I knew about you."))
 
     # --------- shared responder ---------
     async def respond_to(

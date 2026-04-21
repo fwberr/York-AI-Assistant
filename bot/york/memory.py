@@ -19,12 +19,6 @@ from typing import Deque, Dict, List, Tuple
 
 
 @dataclass
-class ChannelState:
-    attached_user_id: int | None = None
-    attached_at: float = 0.0
-
-
-@dataclass
 class UserMemory:
     transcript: Deque[Dict[str, str]] = field(default_factory=lambda: deque(maxlen=24))
     style_notes: List[str] = field(default_factory=list)
@@ -37,7 +31,10 @@ class MemoryStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
         self._users: Dict[int, UserMemory] = defaultdict(UserMemory)
-        self._channels: Dict[int, ChannelState] = defaultdict(ChannelState)
+        # (channel_id, user_id) -> last-touched timestamp.
+        # Each user has their own independent session in each channel,
+        # so several people can talk to York at the same time.
+        self._attachments: Dict[Tuple[int, int], float] = {}
         self._load()
 
     # ---------- persistence ----------
@@ -55,11 +52,12 @@ class MemoryStore:
             mem.style_notes = blob.get("style_notes", [])
             mem.last_seen = blob.get("last_seen", 0.0)
             self._users[int(uid)] = mem
-        for cid, blob in raw.get("channels", {}).items():
-            self._channels[int(cid)] = ChannelState(
-                attached_user_id=blob.get("attached_user_id"),
-                attached_at=blob.get("attached_at", 0.0),
-            )
+        for key, ts in raw.get("attachments", {}).items():
+            try:
+                cid_str, uid_str = key.split(":")
+                self._attachments[(int(cid_str), int(uid_str))] = float(ts)
+            except Exception:
+                continue
 
     def save(self) -> None:
         with self._lock:
@@ -72,40 +70,35 @@ class MemoryStore:
                     }
                     for uid, mem in self._users.items()
                 },
-                "channels": {
-                    str(cid): {
-                        "attached_user_id": st.attached_user_id,
-                        "attached_at": st.attached_at,
-                    }
-                    for cid, st in self._channels.items()
+                "attachments": {
+                    f"{cid}:{uid}": ts
+                    for (cid, uid), ts in self._attachments.items()
                 },
             }
             self.path.write_text(json.dumps(data, indent=2))
 
-    # ---------- attachment ----------
+    # ---------- attachment (per channel + per user) ----------
     def attach(self, channel_id: int, user_id: int) -> None:
-        self._channels[channel_id] = ChannelState(attached_user_id=user_id, attached_at=time.time())
+        self._attachments[(channel_id, user_id)] = time.time()
         self.save()
 
-    def detach(self, channel_id: int) -> None:
-        if channel_id in self._channels:
-            self._channels[channel_id] = ChannelState()
+    def detach(self, channel_id: int, user_id: int) -> None:
+        if self._attachments.pop((channel_id, user_id), None) is not None:
             self.save()
 
     def is_attached(self, channel_id: int, user_id: int) -> bool:
-        st = self._channels.get(channel_id)
-        if not st or st.attached_user_id != user_id:
+        ts = self._attachments.get((channel_id, user_id))
+        if ts is None:
             return False
         # auto-detach after 20 minutes of silence
-        if time.time() - st.attached_at > 20 * 60:
-            self.detach(channel_id)
+        if time.time() - ts > 20 * 60:
+            self.detach(channel_id, user_id)
             return False
         return True
 
-    def touch_attachment(self, channel_id: int) -> None:
-        st = self._channels.get(channel_id)
-        if st and st.attached_user_id is not None:
-            st.attached_at = time.time()
+    def touch_attachment(self, channel_id: int, user_id: int) -> None:
+        if (channel_id, user_id) in self._attachments:
+            self._attachments[(channel_id, user_id)] = time.time()
 
     # ---------- transcript ----------
     def append_message(self, user_id: int, role: str, content: str) -> None:
@@ -131,27 +124,7 @@ class MemoryStore:
 
     # ---------- iter ----------
     def attached_channels(self) -> List[Tuple[int, int]]:
-        return [
-            (cid, st.attached_user_id)
-            for cid, st in self._channels.items()
-            if st.attached_user_id is not None
-        ]
+        return list(self._attachments.keys())
 
     def known_users(self) -> List[int]:
         return list(self._users.keys())
-
-    def attached_user_for(self, channel_id: int) -> int | None:
-        """Return who currently owns this channel's conversation (or None)."""
-        st = self._channels.get(channel_id)
-        if not st or st.attached_user_id is None:
-            return None
-        if time.time() - st.attached_at > 20 * 60:
-            self.detach(channel_id)
-            return None
-        return st.attached_user_id
-
-    def clear_user(self, user_id: int) -> None:
-        """Forget everything York knows about a user."""
-        if user_id in self._users:
-            del self._users[user_id]
-            self.save()
