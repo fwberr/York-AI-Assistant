@@ -19,12 +19,25 @@ def _matches_any(text: str, phrases: tuple[str, ...]) -> bool:
     return any(low == p or low.startswith(p + " ") or low.startswith(p) and len(low) <= len(p) + 2 or p in low for p in phrases)
 
 
+_NAME_REF = re.compile(r"\byork\b", re.IGNORECASE)
+
+
 def _is_wake(text: str) -> Optional[str]:
+    """Return the payload if York is referred to in this message, else None.
+
+    Triggers on any mention of his name ("york", case-insensitive, as a
+    whole word) or the classic wake phrases. If he's only referred to in
+    passing ("i was telling york about that"), we still respond — his
+    name is a summons. If the name never appears, stay silent so he
+    doesn't interrupt other people's conversations.
+    """
     low = text.lower().strip()
     for p in settings.wake_phrases:
         if low.startswith(p):
             stripped = text[len(p):].lstrip(" ,.!?:-")
             return stripped or "(no message)"
+    if _NAME_REF.search(text):
+        return text.strip()
     return None
 
 
