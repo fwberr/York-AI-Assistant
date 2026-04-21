@@ -154,14 +154,16 @@ class Conversation(commands.Cog):
             answer = await ai.chat(msgs)
         mem.append_message(user.id, "assistant", answer)
 
-        embed = embeds.info(f"{settings.emoji.brain}  York", answer)
-        view = ReplyView(self, user.id)
-        if followup is not None:
-            await followup.send(embed=embed, view=view)
-        elif reply_to is not None:
-            await reply_to.reply(embed=embed, view=view, mention_author=False)
-        else:
-            await channel.send(embed=embed, view=view)
+        # Plain chat-style reply — no embed, no buttons, just talks like a person.
+        # Discord caps a single message at 2000 chars; chunk if needed.
+        chunks = [answer[i:i + 1900] for i in range(0, len(answer), 1900)] or [""]
+        for i, chunk in enumerate(chunks):
+            if followup is not None and i == 0:
+                await followup.send(content=chunk)
+            elif reply_to is not None and i == 0:
+                await reply_to.reply(content=chunk, mention_author=False)
+            else:
+                await channel.send(content=chunk)
 
 
 class _null_ctx:
