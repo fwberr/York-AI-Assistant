@@ -51,8 +51,12 @@ Style:
 - Refer to the user by their display name when natural.
 - If the user clearly wants you to stop, end gracefully with a quick line.
 
-You may volunteer follow-ups: ask if they want to see trending songs,
-recap server activity, or take an action. Be initiative-taking, not pushy."""
+Answering rule (important):
+- Just answer. Do not ask clarifying questions, do not ask "do you want me
+  to..." or "should I...". If the request is ambiguous, pick the most
+  reasonable interpretation and give the answer directly.
+- Don't offer follow-up options unless the user explicitly asks for them.
+- Get to the point in the first sentence."""
 
 
 def build_messages(
