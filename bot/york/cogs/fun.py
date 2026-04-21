@@ -41,19 +41,30 @@ def _profile(d: Dict[str, dict], uid: int) -> dict:
     })
 
 
+def _xp_for_next(level: int) -> int:
+    """XP needed to advance from `level` to `level+1`.
+
+    Mirrors the curve Arcane / MEE6 use: 5*n^2 + 50*n + 100.
+    Each level needs noticeably more XP than the last, so growth slows
+    naturally the higher you go.
+    """
+    return 5 * (level ** 2) + 50 * level + 100
+
+
 def _grant_xp(p: dict, amount: int) -> tuple[bool, int, int]:
     """Add XP, auto-leveling. Returns (did_level, new_level, coin_bonus)."""
     p["xp"] += amount
     leveled = False
     coin_bonus = 0
-    while p["xp"] >= p["level"] * 100:
-        p["xp"] -= p["level"] * 100
+    needed = _xp_for_next(p["level"])
+    while p["xp"] >= needed:
+        p["xp"] -= needed
         p["level"] += 1
         leveled = True
-        # Reward: more coins the higher your level.
         bonus = 25 * p["level"]
         p["coins"] += bonus
         coin_bonus += bonus
+        needed = _xp_for_next(p["level"])
     return leveled, p["level"], coin_bonus
 
 
@@ -212,7 +223,7 @@ class Fun(commands.Cog):
             f"{settings.emoji.member}  {m.display_name}",
             [
                 ("Level", str(p["level"]), True),
-                ("XP", f"{p['xp']} / {p['level']*100}", True),
+                ("XP", f"{p['xp']} / {_xp_for_next(p['level'])}", True),
                 ("Coins", str(p["coins"]), True),
                 ("Reputation", str(p["rep"]), True),
                 ("Hugs given", str(p.get("hugs_given", 0)), True),
