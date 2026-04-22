@@ -11,10 +11,20 @@ CATEGORIES = {
     "Talk to York": (
         "How to chat with York.",
         [
-            ("Wake him", 'Say `Hey York` followed by anything.'),
-            ("Mention him", '`@York how are you?`'),
+            ("Wake him", "Say `Hey York` followed by anything, or `@York ...`."),
+            ("Mention in passing", "Drop his name in a sentence — he'll wait for the chat to quiet, then chime in."),
             ("Stop him", "Say one of: **enough**, **done**, **set free**, **detach**, **goodbye**."),
-            ("Buttons", "Every reply has *Detach* and *Suggest something* buttons."),
+            ("Per-user memory", "Each person has their own session, so multiple people can chat with him at once."),
+        ],
+    ),
+    "Ask York for…": (
+        "Things York can do mid-conversation, just by asking.",
+        [
+            ("Real photos", "“Show me a picture of a red panda” → he sends a safe-for-work photo."),
+            ("Reaction GIFs", "Ask for a hug / cheer / facepalm / etc. and he'll drop an anime reaction GIF."),
+            ("Questions & advice", "Math, code, explanations, opinions, recommendations — just ask."),
+            ("Style mirroring", "He learns how you talk over time and matches your vibe."),
+            ("Proactive ideas", "Sometimes he'll volunteer a thought without being asked."),
         ],
     ),
     "Moderation": (
@@ -33,12 +43,40 @@ CATEGORIES = {
             ("Roles", "`!roles` (interactive dropdown)"),
         ],
     ),
-    "Fun (OwO style)": (
-        "Social, economy, leveling.",
+    "Social & leveling": (
+        "OwO-style social actions and chat XP.",
         [
-            ("Social", "`!hug`, `!pet`, `!slap`, `!rep @user`"),
-            ("Economy", "`!daily`, `!profile`, `!leaderboard`"),
-            ("Random", "`!coinflip`, `!roll [sides]`, `!8ball <question>`, `!say <text>`"),
+            ("Reactions", "`!hug @user`, `!pet @user`, `!slap @user`, `!kiss @user`"),
+            ("Reputation", "`!rep @user` (once every 22h)"),
+            ("Profile", "`!profile [@user]`, `!leaderboard`"),
+            ("Random", "`!roll [sides]`, `!8ball <question>`, `!say <text>`"),
+        ],
+    ),
+    "Economy & gambling": (
+        "Earn, spend, send and gamble coins.",
+        [
+            ("Earn", "`!daily` (every ~22h), passive XP from chatting, level-up bonuses"),
+            ("Send coins", "`!pay @user <amount|all>`"),
+            ("Coinflip", "`!coinflip <bet> [heads|tails]` — double or nothing"),
+            ("Pure gamble", "`!gamble <bet|all>` — random 50/50"),
+            ("Blackjack", "`!blackjack <bet|all>` — interactive Hit / Stand / Double vs the dealer"),
+        ],
+    ),
+    "Shop & inventory": (
+        "Buy gifts, trinkets and rings.",
+        [
+            ("Browse", "`!shop` — see all items and prices"),
+            ("Buy", "`!buy <item_id>` (e.g. `!buy ring_gold`)"),
+            ("Inventory", "`!inventory [@user]`"),
+            ("Catalog", "9 ring tiers (Copper → Celestial Halo) plus roses, chocolates, teddy, crown, yacht."),
+        ],
+    ),
+    "Marriage": (
+        "Find your person — or break up.",
+        [
+            ("Propose", "`!marry @user` — uses the fanciest ring in your inventory; they get a Yes/No prompt"),
+            ("Check status", "`!marriage [@user]` — shows spouse, ring used, and days together"),
+            ("End it", "`!divorce` — clears the marriage on both sides"),
         ],
     ),
 }
