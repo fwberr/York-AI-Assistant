@@ -104,6 +104,38 @@ async def fetch_gif(action: str) -> str | None:
 _fetch_gif = fetch_gif
 
 
+# Generic SFW image search powered by Openverse (free, no auth, supports
+# strict SFW filtering via mature=false). Used when a user asks York for
+# a picture of something — e.g. "show me a picture of a red panda".
+async def fetch_image(query: str) -> str | None:
+    q = (query or "").strip()
+    if not q:
+        return None
+    url = "https://api.openverse.org/v1/images/"
+    params = {"q": q, "page_size": 10, "mature": "false", "license_type": "all"}
+    headers = {"User-Agent": "YorkDiscordBot/1.0 (+https://replit.com)"}
+    try:
+        async with aiohttp.ClientSession(headers=headers) as s:
+            async with s.get(url, params=params, timeout=aiohttp.ClientTimeout(total=8)) as r:
+                if r.status != 200:
+                    return None
+                data = await r.json()
+                results = data.get("results") or []
+                # Filter to image hosts Discord can embed inline.
+                ok = [
+                    x for x in results
+                    if (x.get("url") or "").lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp"))
+                    and not x.get("mature", False)
+                ]
+                pool = ok or results
+                if not pool:
+                    return None
+                pick = random.choice(pool[:5])
+                return pick.get("url") or pick.get("thumbnail")
+    except Exception:
+        return None
+
+
 _8BALL = [
     "It is certain.", "Without a doubt.", "Most likely.", "Outlook good.",
     "Signs point to yes.", "Reply hazy, try again.", "Ask again later.",

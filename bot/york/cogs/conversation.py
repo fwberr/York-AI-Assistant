@@ -12,7 +12,7 @@ from discord.ext import commands
 
 from .. import ai, embeds
 from ..config import settings
-from .fun import fetch_gif, GIF_CATEGORIES
+from .fun import fetch_gif, fetch_image, GIF_CATEGORIES
 
 log = logging.getLogger("york.conversation")
 
@@ -41,22 +41,26 @@ def _has_name(text: str) -> bool:
 
 
 _GIF_TOKEN = re.compile(r"\[gif:([a-zA-Z]+)\]")
+_IMG_TOKEN = re.compile(r"\[img:([^\]\n]{1,80})\]")
 
 
-async def _extract_gifs(text: str) -> Tuple[str, list[str]]:
-    """Pull `[gif:category]` tokens out of text and resolve them to URLs.
+async def _extract_media(text: str) -> Tuple[str, list[str]]:
+    """Pull `[gif:cat]` and `[img:query]` tokens and resolve them to URLs.
 
-    Returns (cleaned_text, gif_urls). At most two GIFs per reply.
+    Returns (cleaned_text, media_urls). At most three media items per reply.
     """
-    tokens = _GIF_TOKEN.findall(text)
     urls: list[str] = []
-    for t in tokens[:2]:
+    for t in _GIF_TOKEN.findall(text)[:2]:
         if t.lower() in GIF_CATEGORIES or t.lower() == "pet":
             u = await fetch_gif(t)
             if u:
                 urls.append(u)
-    cleaned = _GIF_TOKEN.sub("", text).strip()
-    return cleaned, urls
+    for q in _IMG_TOKEN.findall(text)[:2]:
+        u = await fetch_image(q)
+        if u:
+            urls.append(u)
+    cleaned = _IMG_TOKEN.sub("", _GIF_TOKEN.sub("", text)).strip()
+    return cleaned, urls[:3]
 
 
 def _is_detach(text: str) -> bool:
@@ -232,7 +236,7 @@ class Conversation(commands.Cog):
         # Parse out any [gif:category] tokens York used in his reply and
         # resolve them to real GIF URLs. Discord auto-embeds image URLs
         # in plain messages, so we just send the URL on its own line.
-        text_out, gif_urls = await _extract_gifs(answer)
+        text_out, gif_urls = await _extract_media(answer)
         if not text_out and not gif_urls:
             text_out = answer  # fall back: shouldn't happen, but safe.
 

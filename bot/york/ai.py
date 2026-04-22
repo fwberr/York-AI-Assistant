@@ -69,7 +69,18 @@ Reaction GIFs:
   facepalm, feed, handhold, happy, highfive, hug, kick, kiss, laugh, nod,
   nom, nope, pat, peck, poke, pout, punch, run, shoot, shrug, sleep,
   slap, smile, smug, stare, think, thumbsup, tickle, wave, wink, yawn,
-  yeet."""
+  yeet.
+
+Real-world images:
+- If the user asks you to show / send / find a picture or image of
+  something real (an animal, a place, food, an object, a person, etc.),
+  include a token like `[img:red panda]` or `[img:eiffel tower at night]`
+  in your reply. The bot replaces it with a real, safe-for-work photo.
+- Keep the query short (under ~8 words) and descriptive. ONE image per
+  reply unless they explicitly ask for several. Never request anything
+  NSFW, gory, or unsafe — the bot enforces SFW but you should too.
+- Don't use [img:...] for anime reaction moments — use [gif:...] for
+  those. Use [img:...] for real photos."""
 
 
 def build_messages(

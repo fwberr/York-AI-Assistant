@@ -43,6 +43,7 @@ class York(commands.Bot):
             "york.cogs.moderation",
             "york.cogs.insights",
             "york.cogs.fun",
+            "york.cogs.economy",
             "york.cogs.proactive",
             "york.cogs.help_cog",
         ):
