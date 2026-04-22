@@ -440,6 +440,10 @@ class _BlackjackView(discord.ui.View):
         self.message: Optional[discord.Message] = None
         # Disable double-down once the player has hit at least once.
         self._can_double = True
+        # Outcome state (set when the hand resolves).
+        self.outcome: Optional[str] = None  # "win" | "lose" | "push" | "blackjack" | "bust"
+        self.delta: int = 0  # net coins won (+) or lost (-)
+        self.balance_after: int = 0
 
     # ---- view utilities ----
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -453,7 +457,7 @@ class _BlackjackView(discord.ui.View):
             # Treat as stand on timeout.
             await self._dealer_play_and_finish(reason="Timed out — auto-stand.")
 
-    def render(self, opening: bool = False, footer: str | None = None) -> discord.Embed:
+    def render(self, opening: bool = False) -> discord.Embed:
         pv = _hand_value(self.player_hand)
         if self.finished:
             dv = _hand_value(self.dealer_hand)
@@ -461,18 +465,56 @@ class _BlackjackView(discord.ui.View):
         else:
             dealer_line = f"{_hand_str(self.dealer_hand, hide_first=True)}  → **?**"
 
-        title = "Blackjack"
-        if opening and _is_blackjack(self.player_hand):
-            title = "Blackjack — natural 21!"
+        # Pick title, color, and the big result banner based on outcome.
+        if not self.finished:
+            title = "Blackjack — natural 21!" if (opening and _is_blackjack(self.player_hand)) else "Blackjack"
+            builder = embeds.info
+            banner = ""
+        else:
+            banner_map = {
+                "blackjack": (
+                    f"{settings.emoji.ok}  YOU WIN — Blackjack!",
+                    embeds.success,
+                    f"💰 **+{self.delta} coins** (3:2 payout)",
+                ),
+                "win": (
+                    f"{settings.emoji.ok}  YOU WIN!",
+                    embeds.success,
+                    f"💰 **+{self.delta} coins**",
+                ),
+                "push": (
+                    f"{settings.emoji.info}  PUSH — tie",
+                    embeds.info,
+                    f"↔️ Bet of **{self.bet}** returned. No change.",
+                ),
+                "bust": (
+                    f"{settings.emoji.error}  YOU LOSE — Bust!",
+                    embeds.danger,
+                    f"💸 **−{abs(self.delta)} coins**",
+                ),
+                "lose": (
+                    f"{settings.emoji.error}  YOU LOSE",
+                    embeds.danger,
+                    f"💸 **−{abs(self.delta)} coins**",
+                ),
+            }
+            title, builder, banner = banner_map.get(
+                self.outcome or "lose", banner_map["lose"]
+            )
 
-        e = embeds.info(
-            f"{settings.emoji.spark}  {title}",
-            f"**Bet:** {self.bet} coins\n\n"
-            f"**{self.player.display_name}**\n{_hand_str(self.player_hand)}  → **{pv}**\n\n"
-            f"**Dealer**\n{dealer_line}",
+        body = (
+            (f"**{banner}**\n\n" if banner else "")
+            + f"**Bet:** {self.bet} coins\n\n"
+            + f"**{self.player.display_name}**\n{_hand_str(self.player_hand)}  → **{pv}**\n\n"
+            + f"**Dealer**\n{dealer_line}"
         )
-        if footer:
-            e.set_footer(text=f"{footer} · York · built by {settings.creator}")
+
+        e = builder(title, body)
+        if self.finished:
+            e.set_footer(
+                text=f"Balance: {self.balance_after} coins · "
+                     f"York · built by {settings.creator}"
+            )
         return e
 
     # ---- buttons ----
@@ -527,39 +569,40 @@ class _BlackjackView(discord.ui.View):
 
         # Determine outcome and payout. `bet` was already deducted at start.
         d = _load(); p = _profile(d, self.player.id)
-        payout = 0  # coins to credit back to the player.
-        result_line = ""
+        payout = 0   # coins to credit back to the player (includes original bet).
+        outcome = "lose"
 
         if pv > 21:
-            result_line = f"You bust at **{pv}**. Dealer wins. **−{self.bet}** coins."
+            outcome = "bust"
         elif player_bj and not dealer_bj:
-            # 3:2 on natural blackjack.
+            outcome = "blackjack"
             payout = int(self.bet * 2.5)
-            result_line = f"Natural blackjack! Pays 3:2. **+{payout - self.bet}** coins."
-        elif dv > 21:
+        elif dv > 21 or pv > dv:
+            outcome = "win"
             payout = self.bet * 2
-            result_line = f"Dealer busts at **{dv}**. You win! **+{self.bet}** coins."
-        elif pv > dv:
-            payout = self.bet * 2
-            result_line = f"**{pv}** beats **{dv}**. You win! **+{self.bet}** coins."
         elif pv < dv:
-            result_line = f"**{dv}** beats **{pv}**. Dealer wins. **−{self.bet}** coins."
+            outcome = "lose"
         else:
-            payout = self.bet  # push — refund.
-            result_line = f"Push at **{pv}**. Bet returned."
+            outcome = "push"
+            payout = self.bet  # refund
 
         if payout:
             p["coins"] = p.get("coins", 0) + payout
-        # XP win bonus.
         _grant_xp(p, 6 if payout > self.bet else 2)
         _save(d)
 
+        self.outcome = outcome
+        self.delta = payout - self.bet  # net change vs. starting balance
+        self.balance_after = p["coins"]
         self.finished = True
         for child in self.children:
             child.disabled = True
 
-        footer = reason or f"Balance: {p['coins']} coins"
-        e = self.render(footer=f"{result_line}  ·  {footer}")
+        e = self.render()
+        if reason:
+            # Append the timeout note to whatever footer render() set.
+            existing = e.footer.text or ""
+            e.set_footer(text=f"{reason} · {existing}")
         if self.message:
             try:
                 await self.message.edit(embed=e, view=self)
