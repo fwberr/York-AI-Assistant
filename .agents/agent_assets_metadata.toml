@@ -5,4 +5,4 @@ generated = []
 id = "sTWQgqovt8TKQJ2DwYup6"
 uri = "file://exports/york-bot.zip"
 type = "unspecified"
-title = "york-bot.zip — now with app.py entrypoint"
+title = "york-bot.zip — entrypoint renamed to main.py for Katabump"
