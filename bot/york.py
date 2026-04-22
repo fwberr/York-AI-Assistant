@@ -16,6 +16,7 @@ import discord
 from discord.ext import commands
 
 from york.config import settings
+from york.keepalive import start as start_keepalive
 from york.memory import MemoryStore
 
 logging.basicConfig(
@@ -74,9 +75,14 @@ async def main() -> None:
     if not settings.openai_key:
         log.warning("OPENAI_API_KEY missing — AI conversation will be disabled.")
 
+    keepalive_runner = await start_keepalive()
+
     bot = York()
-    async with bot:
-        await bot.start(settings.discord_token)
+    try:
+        async with bot:
+            await bot.start(settings.discord_token)
+    finally:
+        await keepalive_runner.cleanup()
 
 
 if __name__ == "__main__":
