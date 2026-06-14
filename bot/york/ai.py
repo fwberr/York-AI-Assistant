@@ -39,6 +39,10 @@ def _is_groq() -> bool:
     return "groq.com" in (settings.ai_url or "")
 
 
+def _is_openrouter() -> bool:
+    return "openrouter.ai" in (settings.ai_url or "")
+
+
 async def _groq_chat(messages: List[dict], model: str, max_tokens: int) -> str:
     """Call Groq directly via aiohttp, bypassing the openai SDK / httpx stack."""
     headers = {**_AIOHTTP_HEADERS, "Authorization": f"Bearer {settings.ai_key}"}
@@ -56,7 +60,7 @@ async def _groq_chat(messages: List[dict], model: str, max_tokens: int) -> str:
 def client() -> AsyncOpenAI | None:
     global _client
     if _is_groq():
-        return None  # Groq uses aiohttp path, not the SDK
+        return None  # Groq uses aiohttp path instead
     key = settings.ai_key
     if not key:
         return None
@@ -64,6 +68,11 @@ def client() -> AsyncOpenAI | None:
         kwargs: dict = {"api_key": key}
         if settings.ai_url:
             kwargs["base_url"] = settings.ai_url
+        if _is_openrouter():
+            kwargs["default_headers"] = {
+                "HTTP-Referer": "https://github.com/york-discord-bot",
+                "X-Title": "York Discord Bot",
+            }
         _client = AsyncOpenAI(**kwargs)
     return _client
 

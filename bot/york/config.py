@@ -18,14 +18,20 @@ def _resolve_ai_provider() -> tuple[str, str, str]:
     YORK_MODEL always overrides the default model if set.
     YORK_BASE_URL always overrides the base URL if set.
     """
-    groq_key   = os.getenv("GROQ_API_KEY", "")
-    proxy_key  = os.getenv("AI_INTEGRATIONS_OPENAI_API_KEY", "")
-    proxy_url  = os.getenv("AI_INTEGRATIONS_OPENAI_BASE_URL", "")
-    openai_key = os.getenv("OPENAI_API_KEY", "")
-    custom_url = os.getenv("YORK_BASE_URL", "")
-    custom_mdl = os.getenv("YORK_MODEL", "")
+    openrouter_key = os.getenv("OPENROUTER_API_KEY", "")
+    groq_key       = os.getenv("GROQ_API_KEY", "")
+    proxy_key      = os.getenv("AI_INTEGRATIONS_OPENAI_API_KEY", "")
+    proxy_url      = os.getenv("AI_INTEGRATIONS_OPENAI_BASE_URL", "")
+    openai_key     = os.getenv("OPENAI_API_KEY", "")
+    custom_url     = os.getenv("YORK_BASE_URL", "")
+    custom_mdl     = os.getenv("YORK_MODEL", "")
 
-    if groq_key:
+    if openrouter_key:
+        # OpenRouter: free Llama 3.3 70B, works from all cloud hosts (no IP blocks).
+        key   = openrouter_key
+        url   = custom_url or "https://openrouter.ai/api/v1"
+        model = custom_mdl or "meta-llama/llama-3.3-70b-instruct:free"
+    elif groq_key:
         key   = groq_key
         url   = custom_url or "https://api.groq.com/openai/v1"
         model = custom_mdl or "llama-3.3-70b-versatile"

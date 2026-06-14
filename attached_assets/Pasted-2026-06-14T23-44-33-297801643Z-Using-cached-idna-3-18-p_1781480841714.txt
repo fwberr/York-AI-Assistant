@@ -1,0 +1,50 @@
+2026-06-14T23:44:33.297801643Z Using cached idna-3.18-py3-none-any.whl (65 kB)
+2026-06-14T23:44:33.298924616Z Using cached propcache-0.5.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (61 kB)
+2026-06-14T23:44:33.300005578Z Using cached tqdm-4.68.2-py3-none-any.whl (78 kB)
+2026-06-14T23:44:33.301109911Z Using cached typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+2026-06-14T23:44:33.302150451Z Using cached audioop_lts-0.2.2-cp313-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (85 kB)
+2026-06-14T23:44:33.303251763Z Using cached certifi-2026.5.20-py3-none-any.whl (134 kB)
+2026-06-14T23:44:33.304402097Z Using cached sniffio-1.3.1-py3-none-any.whl (10 kB)
+2026-06-14T23:44:33.392870531Z Installing collected packages: typing-extensions, tqdm, sniffio, python-dotenv, propcache, multidict, jiter, idna, h11, frozenlist, distro, certifi, audioop-lts, attrs, annotated-types, aiohappyeyeballs, yarl, typing-inspection, pydantic-core, httpcore, anyio, aiosignal, pydantic, httpx, aiohttp, openai, discord.py
+2026-06-14T23:44:38.678315071Z 
+2026-06-14T23:44:38.681635398Z Successfully installed aiohappyeyeballs-2.6.2 aiohttp-3.14.1 aiosignal-1.4.0 annotated-types-0.7.0 anyio-4.13.0 attrs-26.1.0 audioop-lts-0.2.2 certifi-2026.5.20 discord.py-2.7.1 distro-1.9.0 frozenlist-1.8.0 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.18 jiter-0.15.0 multidict-6.7.1 openai-2.41.1 propcache-0.5.2 pydantic-2.13.4 pydantic-core-2.46.4 python-dotenv-1.2.2 sniffio-1.3.1 tqdm-4.68.2 typing-extensions-4.15.0 typing-inspection-0.4.2 yarl-1.24.2
+2026-06-14T23:44:38.688097127Z 
+2026-06-14T23:44:38.688114468Z [notice] A new release of pip is available: 25.3 -> 26.1.2
+2026-06-14T23:44:38.688118398Z [notice] To update, run: pip install --upgrade pip
+2026-06-14T23:44:40.988115936Z ==> Uploading build...
+2026-06-14T23:44:45.306059823Z ==> Uploaded in 1.9s. Compression took 2.4s
+2026-06-14T23:44:45.387636484Z ==> Build successful 🎉
+2026-06-14T23:44:49.803954332Z ==> Deploying...
+2026-06-14T23:44:49.990905812Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-06-14T23:45:09.563091139Z 2026-06-14 23:45:09,562 | INFO    | discord.client | logging in using static token
+2026-06-14T23:45:10.260070489Z 2026-06-14 23:45:10,257 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:45:10 +0000] "HEAD / HTTP/1.1" 200 153 "-" "Go-http-client/1.1"
+2026-06-14T23:45:11.067332418Z ==> Your service is live 🎉
+2026-06-14T23:45:11.253059135Z ==> 
+2026-06-14T23:45:11.255378237Z ==> ///////////////////////////////////////////////////////////
+2026-06-14T23:45:11.257504005Z ==> 
+2026-06-14T23:45:11.259918818Z ==> Available at your primary URL https://york-ai-assistant-1.onrender.com
+2026-06-14T23:45:11.262187229Z ==> 
+2026-06-14T23:45:11.264583562Z ==> ///////////////////////////////////////////////////////////
+2026-06-14T23:45:18.549989466Z 2026-06-14 23:45:18,549 | INFO    | york | Loaded extension: york.cogs.conversation
+2026-06-14T23:45:18.648428409Z 2026-06-14 23:45:18,648 | INFO    | york | Loaded extension: york.cogs.moderation
+2026-06-14T23:45:18.654256521Z 2026-06-14 23:45:18,654 | INFO    | york | Loaded extension: york.cogs.insights
+2026-06-14T23:45:18.744832332Z 2026-06-14 23:45:18,744 | INFO    | york | Loaded extension: york.cogs.fun
+2026-06-14T23:45:19.045899449Z 2026-06-14 23:45:19,044 | INFO    | york | Loaded extension: york.cogs.economy
+2026-06-14T23:45:19.050578753Z 2026-06-14 23:45:19,050 | INFO    | york | Loaded extension: york.cogs.fishing
+2026-06-14T23:45:19.056254611Z 2026-06-14 23:45:19,056 | INFO    | york | Loaded extension: york.cogs.starboard
+2026-06-14T23:45:19.058837834Z 2026-06-14 23:45:19,058 | INFO    | york | Loaded extension: york.cogs.proactive
+2026-06-14T23:45:19.147204261Z 2026-06-14 23:45:19,147 | INFO    | york | Loaded extension: york.cogs.help_cog
+2026-06-14T23:45:19.149333273Z 2026-06-14 23:45:19,149 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:45:19 +0000] "GET / HTTP/1.1" 200 168 "-" "Go-http-client/2.0"
+2026-06-14T23:45:19.554845039Z 2026-06-14 23:45:19,554 | INFO    | york | Synced 48 slash commands
+2026-06-14T23:45:19.912057241Z 2026-06-14 23:45:19,911 | INFO    | discord.gateway | Shard ID None has connected to Gateway (Session ID: dbd24edb3581778c95106da5f62cc2a0).
+2026-06-14T23:45:22.553013296Z 2026-06-14 23:45:22,552 | INFO    | york | York online as York#2771 (id=1496154816206864434)
+2026-06-14T23:45:27.833005602Z 2026-06-14 23:45:27,832 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:45:27 +0000] "GET / HTTP/1.1" 200 168 "-" "Mozilla/5.0 (compatible)"
+2026-06-14T23:45:56.42232855Z 2026-06-14 23:45:56,421 | ERROR   | york.ai | AI call failed: Groq 403: Access denied. Please check your network settings.
+2026-06-14T23:45:56.422374921Z Traceback (most recent call last):
+2026-06-14T23:45:56.422380571Z   File "/opt/render/project/src/bot/york/ai.py", line 142, in chat
+2026-06-14T23:45:56.422385441Z     return await _groq_chat(messages, settings.ai_model, 600)
+2026-06-14T23:45:56.422389261Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:45:56.422394392Z   File "/opt/render/project/src/bot/york/ai.py", line 52, in _groq_chat
+2026-06-14T23:45:56.422400512Z     raise RuntimeError(f"Groq {resp.status}: {err}")
+2026-06-14T23:45:56.422406932Z RuntimeError: Groq 403: Access denied. Please check your network settings.
+2026-06-14T23:45:59.278777064Z 2026-06-14 23:45:59,278 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:45:59 +0000] "HEAD / HTTP/1.1" 200 153 "https://york-ai-assistant-1.onrender.com" "Mozilla/5.0+(compatible; UptimeRobot/2.0; http://www.uptimerobot.com/)"

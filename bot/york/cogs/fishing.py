@@ -40,7 +40,7 @@ _FISH_NAMES   = [x[0] for x in _FISH_POOL]
 _FISH_COINS   = [x[1] for x in _FISH_POOL]
 _FISH_WEIGHTS = [x[2] for x in _FISH_POOL]
 
-FISHING_COOLDOWN = 3 * 60   # 3 minutes
+FISHING_COOLDOWN = 10        # 10 seconds
 WORK_COOLDOWN    = 30 * 60  # 30 minutes
 
 # Flavour text for !work — randomly picked each shift.
@@ -65,7 +65,7 @@ class Fishing(commands.Cog):
         self.bot = bot
 
     # ---------- fish ----------
-    @commands.hybrid_command(name="fish", description="Go fishing! 3-minute cooldown.")
+    @commands.hybrid_command(name="fish", description="Go fishing! 10-second cooldown.")
     async def fish(self, ctx: commands.Context):
         d = _load(); p = _profile(d, ctx.author.id)
         now = time.time()
@@ -74,7 +74,7 @@ class Fishing(commands.Cog):
             remaining = int(FISHING_COOLDOWN - (now - last))
             await v2.send(ctx, v2.warn(
                 "Line Already Cast",
-                f"Your line is still in the water. Try again in **{remaining // 60}m {remaining % 60}s**.",
+                f"Your line is still in the water. Try again in **{remaining}s**.",
             ))
             return
 
