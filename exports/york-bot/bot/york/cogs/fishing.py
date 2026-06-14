@@ -1,9 +1,4 @@
-"""Fishing cog — !fish, !opencrate.
-
-Fish → earn coins directly OR get a mystery crate.
-Crates → open with !opencrate to get (or not get) a random sellable item.
-Sell loot items with !sell <item_id> (defined in economy.py).
-"""
+"""Fishing & Work cogs — !fish, !opencrate, !work."""
 from __future__ import annotations
 
 import random
@@ -33,7 +28,6 @@ _RARITY_LABELS = {
     "legendary": "🌈 Legendary",
 }
 
-# Fish-only loot table (coins earned directly, no crate)
 _FISH_POOL = [
     ("a tiny minnow",    5,   60),
     ("a scrappy carp",   15,  50),
@@ -42,18 +36,36 @@ _FISH_POOL = [
     ("a prize trout",    120, 10),
     ("a massive salmon", 250, 5),
 ]
-_FISH_NAMES = [x[0] for x in _FISH_POOL]
-_FISH_COINS = [x[1] for x in _FISH_POOL]
+_FISH_NAMES   = [x[0] for x in _FISH_POOL]
+_FISH_COINS   = [x[1] for x in _FISH_POOL]
 _FISH_WEIGHTS = [x[2] for x in _FISH_POOL]
 
-FISHING_COOLDOWN = 3 * 60  # 3 minutes
+FISHING_COOLDOWN = 3 * 60   # 3 minutes
+WORK_COOLDOWN    = 30 * 60  # 30 minutes
+
+# Flavour text for !work — randomly picked each shift.
+_WORK_SHIFTS = [
+    ("delivered packages across the city",         (80,  160)),
+    ("worked a shift at the coffee shop",           (70,  140)),
+    ("fixed a server rack in the data centre",      (100, 200)),
+    ("wrote code for a client all afternoon",       (90,  180)),
+    ("drove an Uber around town",                   (60,  130)),
+    ("stocked shelves at the supermarket",          (50,  110)),
+    ("tutored a student in mathematics",            (80,  160)),
+    ("helped moderate a Discord server",            (70,  150)),
+    ("repaired a broken fence for a neighbour",     (60,  120)),
+    ("sold handmade crafts at the weekend market",  (75,  175)),
+    ("walked five dogs around the park",            (55,  105)),
+    ("recorded a podcast episode for a client",     (90,  190)),
+]
 
 
 class Fishing(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.hybrid_command(name="fish", description="Go fishing! 3-minute cooldown. May reel in coins or a mystery crate.")
+    # ---------- fish ----------
+    @commands.hybrid_command(name="fish", description="Go fishing! 3-minute cooldown.")
     async def fish(self, ctx: commands.Context):
         d = _load(); p = _profile(d, ctx.author.id)
         now = time.time()
@@ -69,7 +81,6 @@ class Fishing(commands.Cog):
         p["last_fish"] = now
         _grant_xp(p, random.randint(3, 8))
 
-        # 25% crate, 75% direct fish
         if random.random() < 0.25:
             inv = p.setdefault("inventory", [])
             inv.append("crate")
@@ -77,13 +88,12 @@ class Fishing(commands.Cog):
             await v2.send(ctx, v2.success(
                 f"{settings.emoji.crate}  Mystery Crate!",
                 f"You reeled in a **Mystery Crate** instead of a fish!\n"
-                f"Use `!opencrate` to open it and see what's inside.",
+                f"Use `!opencrate` to see what's inside.",
             ))
         else:
             name = random.choices(_FISH_NAMES, weights=_FISH_WEIGHTS, k=1)[0]
             idx = _FISH_NAMES.index(name)
-            coins = _FISH_COINS[idx] + random.randint(-5, 10)
-            coins = max(1, coins)
+            coins = max(1, _FISH_COINS[idx] + random.randint(-5, 10))
             p["coins"] = p.get("coins", 0) + coins
             _save(d)
             await v2.send(ctx, v2.success(
@@ -92,6 +102,7 @@ class Fishing(commands.Cog):
                 f"Balance: **{p['coins']:,}** coins.",
             ))
 
+    # ---------- opencrate ----------
     @commands.hybrid_command(name="opencrate", description="Open a Mystery Crate from your inventory.")
     async def opencrate(self, ctx: commands.Context):
         d = _load(); p = _profile(d, ctx.author.id)
@@ -105,8 +116,6 @@ class Fishing(commands.Cog):
             return
 
         inv.remove("crate")
-
-        # Roll loot
         loot_id: str | None = random.choices(_CRATE_KEYS, weights=_CRATE_WEIGHTS, k=1)[0]
 
         if loot_id is None:
@@ -127,14 +136,45 @@ class Fishing(commands.Cog):
         await v2.send(ctx, v2.build(
             style,
             f"{settings.emoji.crate}  Crate Opened!",
-            f"You found something inside!",
+            "You found something inside!",
             fields=[
-                ("Item", item["name"]),
-                ("Rarity", rarity_label),
-                ("Sell Value", f"{item['sell']:,} coins" if item["sell"] > 0 else "Worthless junk"),
+                ("Item",        item["name"]),
+                ("Rarity",      rarity_label),
+                ("Sell Value",  f"{item['sell']:,} coins" if item["sell"] > 0 else "Worthless junk"),
                 ("Description", item["desc"]),
             ],
             footer=f"Sell it with !sell {loot_id} · {settings.bot_name} · built by {settings.creator}",
+        ))
+
+    # ---------- work ----------
+    @commands.hybrid_command(name="work", description="Work a shift and earn coins. 30-minute cooldown.")
+    async def work(self, ctx: commands.Context):
+        d = _load(); p = _profile(d, ctx.author.id)
+        now = time.time()
+        last = p.get("last_work", 0)
+        if now - last < WORK_COOLDOWN:
+            remaining = int(WORK_COOLDOWN - (now - last))
+            await v2.send(ctx, v2.warn(
+                "Still On Break",
+                f"You need to rest before your next shift.\n"
+                f"Available again in **{remaining // 60}m {remaining % 60}s**.",
+            ))
+            return
+
+        shift, (low, high) = random.choice(_WORK_SHIFTS)
+        # Bonus scales slightly with level so higher-level players earn a bit more.
+        level_bonus = p.get("level", 1) * 2
+        earned = random.randint(low, high) + level_bonus
+        p["coins"] = p.get("coins", 0) + earned
+        p["last_work"] = now
+        _grant_xp(p, random.randint(10, 20))
+        _save(d)
+
+        await v2.send(ctx, v2.success(
+            f"Shift Complete",
+            f"You {shift} and earned **{earned:,}** coins.\n"
+            f"Balance: **{p['coins']:,}** coins.",
+            footer=f"Next shift available in 30 minutes · {settings.bot_name} · built by {settings.creator}",
         ))
 
 

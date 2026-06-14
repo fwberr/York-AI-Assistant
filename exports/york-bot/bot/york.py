@@ -46,6 +46,7 @@ class York(commands.Bot):
             "york.cogs.fun",
             "york.cogs.economy",
             "york.cogs.fishing",
+            "york.cogs.starboard",
             "york.cogs.proactive",
             "york.cogs.help_cog",
         ):

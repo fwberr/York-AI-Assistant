@@ -70,6 +70,17 @@ CATEGORIES = {
             ("Inventory", "`!inventory [@user]`"),
             ("Sell loot", "`!sell <item_id> [qty]` · `!sell all` — sell all sellable items"),
             ("Crates", "`!fish` to catch crates · `!opencrate` to reveal what is inside"),
+            ("Work", "`!work` — earn coins every 30 minutes"),
+        ],
+    ),
+    "Starboard": (
+        "Automatically highlights popular messages. Requires Manage Server to configure.",
+        [
+            ("Set channel", "`!starboard channel #channel` — where starred messages appear"),
+            ("Set threshold", "`!starboard stars <n>` — how many reactions are needed"),
+            ("Set emoji", "`!starboard emoji <emoji>` — which reaction triggers it (default ⭐)"),
+            ("View config", "`!starboard` — show current settings"),
+            ("Reset history", "`!starboard reset` — allow old messages to be starred again"),
         ],
     ),
     "Marriage": (
