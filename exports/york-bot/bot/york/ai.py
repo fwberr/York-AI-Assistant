@@ -1,4 +1,8 @@
-"""OpenAI-powered brain for York."""
+"""OpenAI-compatible AI brain for York.
+
+Works with OpenAI, Groq, or any OpenAI-compatible provider.
+Provider is auto-detected from environment variables (see config.py).
+"""
 from __future__ import annotations
 
 import logging
@@ -16,15 +20,19 @@ _client: AsyncOpenAI | None = None
 
 def client() -> AsyncOpenAI | None:
     global _client
-    api_key = settings.proxy_key or settings.openai_key
-    if not api_key:
+    key = settings.ai_key
+    if not key:
         return None
     if _client is None:
-        kwargs = {"api_key": api_key}
-        if settings.proxy_base_url:
-            kwargs["base_url"] = settings.proxy_base_url
+        kwargs: dict = {"api_key": key}
+        if settings.ai_url:
+            kwargs["base_url"] = settings.ai_url
         _client = AsyncOpenAI(**kwargs)
     return _client
+
+
+def _is_groq() -> bool:
+    return "groq.com" in (settings.ai_url or "")
 
 
 SYSTEM_PROMPT = """You are York, a professional Jarvis-style AI assistant living inside a Discord server.
@@ -91,26 +99,37 @@ def build_messages(
 async def chat(messages: List[dict]) -> str:
     c = client()
     if c is None:
-        return "My AI module is currently offline. Berry needs to configure an OPENAI_API_KEY."
-    try:
-        resp = await c.chat.completions.create(
-            model=settings.openai_model,
-            messages=messages,
-            max_completion_tokens=600,
-            reasoning_effort="minimal",
+        return (
+            "My AI module is currently offline. "
+            "Set GROQ_API_KEY or OPENAI_API_KEY in your environment variables."
         )
+    try:
+        # Build kwargs that work across providers.
+        # - reasoning_effort is OpenAI o-series only → omit for Groq and others.
+        # - max_tokens is the universal param; max_completion_tokens is newer OpenAI alias.
+        kwargs: dict = {
+            "model": settings.ai_model,
+            "messages": messages,
+            "max_tokens": 600,
+        }
+        if not _is_groq():
+            # Only pass OpenAI-specific params when not on Groq.
+            kwargs["max_completion_tokens"] = 600
+            del kwargs["max_tokens"]
+
+        resp = await c.chat.completions.create(**kwargs)
         return (resp.choices[0].message.content or "").strip()
     except Exception as exc:
-        log.exception("OpenAI call failed: %s", exc)
-        return f"I encountered an error processing that request — {exc.__class__.__name__}. Please try again."
+        log.exception("AI call failed: %s", exc)
+        return f"I encountered an error — {exc.__class__.__name__}. Please try again."
 
 
 _STYLE_HINTS = [
     (re.compile(r"\b(please|kindly|could you)\b", re.I), "tends to phrase requests politely"),
-    (re.compile(r"\b(asap|immediately|now)\b", re.I), "frequently signals urgency"),
-    (re.compile(r"\b(server|members|roles|mod|moderation)\b", re.I), "talks about server administration"),
+    (re.compile(r"\b(asap|immediately|now)\b", re.I),    "frequently signals urgency"),
+    (re.compile(r"\b(server|members|roles|mod)\b", re.I),"talks about server administration"),
     (re.compile(r"\b(music|spotify|song|playlist)\b", re.I), "is interested in music"),
-    (re.compile(r"\b(game|gaming|valorant|minecraft|league)\b", re.I), "talks about games"),
+    (re.compile(r"\b(game|gaming|valorant|minecraft)\b", re.I), "talks about games"),
 ]
 
 
