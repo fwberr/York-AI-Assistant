@@ -1,0 +1,50 @@
+2026-06-14T23:29:00.447936399Z Using cached propcache-0.5.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (61 kB)
+2026-06-14T23:29:00.449065503Z Using cached tqdm-4.68.2-py3-none-any.whl (78 kB)
+2026-06-14T23:29:00.450205388Z Using cached typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+2026-06-14T23:29:00.451278341Z Using cached audioop_lts-0.2.2-cp313-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (85 kB)
+2026-06-14T23:29:00.452415455Z Using cached certifi-2026.5.20-py3-none-any.whl (134 kB)
+2026-06-14T23:29:00.45357521Z Using cached sniffio-1.3.1-py3-none-any.whl (10 kB)
+2026-06-14T23:29:00.536652235Z Installing collected packages: typing-extensions, tqdm, sniffio, python-dotenv, propcache, multidict, jiter, idna, h11, frozenlist, distro, certifi, audioop-lts, attrs, annotated-types, aiohappyeyeballs, yarl, typing-inspection, pydantic-core, httpcore, anyio, aiosignal, pydantic, httpx, aiohttp, openai, discord.py
+2026-06-14T23:29:03.918378142Z 
+2026-06-14T23:29:03.921525619Z Successfully installed aiohappyeyeballs-2.6.2 aiohttp-3.14.1 aiosignal-1.4.0 annotated-types-0.7.0 anyio-4.13.0 attrs-26.1.0 audioop-lts-0.2.2 certifi-2026.5.20 discord.py-2.7.1 distro-1.9.0 frozenlist-1.8.0 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.18 jiter-0.15.0 multidict-6.7.1 openai-2.41.1 propcache-0.5.2 pydantic-2.13.4 pydantic-core-2.46.4 python-dotenv-1.2.2 sniffio-1.3.1 tqdm-4.68.2 typing-extensions-4.15.0 typing-inspection-0.4.2 yarl-1.24.2
+2026-06-14T23:29:03.926775382Z 
+2026-06-14T23:29:03.926791803Z [notice] A new release of pip is available: 25.3 -> 26.1.2
+2026-06-14T23:29:03.926795223Z [notice] To update, run: pip install --upgrade pip
+2026-06-14T23:29:07.919127286Z ==> Uploading build...
+2026-06-14T23:29:12.231417092Z ==> Uploaded in 2.0s. Compression took 2.3s
+2026-06-14T23:29:12.306605837Z ==> Build successful 🎉
+2026-06-14T23:29:17.0533996Z ==> Deploying...
+2026-06-14T23:29:17.246395855Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-06-14T23:30:18.302118939Z ==> Your service is live 🎉
+2026-06-14T23:30:18.500901245Z ==> 
+2026-06-14T23:30:18.503689116Z ==> ///////////////////////////////////////////////////////////
+2026-06-14T23:30:18.50671363Z ==> 
+2026-06-14T23:30:18.509363578Z ==> Available at your primary URL https://york-ai-assistant-1.onrender.com
+2026-06-14T23:30:18.511633618Z ==> 
+2026-06-14T23:30:18.514118613Z ==> ///////////////////////////////////////////////////////////
+2026-06-14T23:30:19.797005566Z 2026-06-14 23:30:19,796 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:30:19 +0000] "HEAD / HTTP/1.1" 200 153 "-" "Go-http-client/1.1"
+2026-06-14T23:30:19.797431116Z 2026-06-14 23:30:19,797 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:30:19 +0000] "GET / HTTP/1.1" 200 168 "-" "Go-http-client/2.0"
+2026-06-14T23:30:19.7976496Z 2026-06-14 23:30:19,797 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:30:19 +0000] "HEAD / HTTP/1.1" 200 153 "-" "Go-http-client/1.1"
+2026-06-14T23:30:21.051169046Z 2026-06-14 23:30:21,050 | INFO    | york | Synced 48 slash commands
+2026-06-14T23:30:21.41678066Z 2026-06-14 23:30:21,416 | INFO    | discord.gateway | Shard ID None has connected to Gateway (Session ID: 810c21ac9b43803266e9bb449c6397be).
+2026-06-14T23:30:22.836083846Z ==> No open HTTP ports detected on 0.0.0.0, continuing to scan...
+2026-06-14T23:30:24.005136655Z 2026-06-14 23:30:24,004 | INFO    | york | York online as York#2771 (id=1496154816206864434)
+2026-06-14T23:30:47.449882049Z 2026-06-14 23:30:47,449 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:30:47 +0000] "HEAD / HTTP/1.1" 200 153 "https://york-ai-assistant-1.onrender.com" "Mozilla/5.0+(compatible; UptimeRobot/2.0; http://www.uptimerobot.com/)"
+2026-06-14T23:31:00.906457588Z 2026-06-14 23:31:00,906 | INFO    | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 403 Forbidden"
+2026-06-14T23:31:00.910816644Z 2026-06-14 23:31:00,907 | ERROR   | york.ai | AI call failed: Error code: 403 - {'error': {'message': 'Access denied. Please check your network settings.'}}
+2026-06-14T23:31:00.910833364Z Traceback (most recent call last):
+2026-06-14T23:31:00.910838584Z   File "/opt/render/project/src/bot/york/ai.py", line 120, in chat
+2026-06-14T23:31:00.910843184Z     resp = await c.chat.completions.create(**kwargs)
+2026-06-14T23:31:00.910847245Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:31:00.910851614Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/openai/resources/chat/completions/completions.py", line 2814, in create
+2026-06-14T23:31:00.910870405Z     return await self._post(
+2026-06-14T23:31:00.910873995Z            ^^^^^^^^^^^^^^^^^
+2026-06-14T23:31:00.910877065Z     ...<54 lines>...
+2026-06-14T23:31:00.910879875Z     )
+2026-06-14T23:31:00.910882365Z     ^
+2026-06-14T23:31:00.910885265Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/openai/_base_client.py", line 1931, in post
+2026-06-14T23:31:00.910888175Z     return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+2026-06-14T23:31:00.910890646Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:31:00.910893635Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/openai/_base_client.py", line 1716, in request
+2026-06-14T23:31:00.910896326Z     raise self._make_status_error_from_response(err.response) from None
+2026-06-14T23:31:00.910898856Z openai.PermissionDeniedError: Error code: 403 - {'error': {'message': 'Access denied. Please check your network settings.'}}

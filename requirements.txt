@@ -6,3 +6,4 @@ aiohttp
 discord.py
 openai
 python-dotenv
+openai
