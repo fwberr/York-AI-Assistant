@@ -1,12 +1,11 @@
 """OpenAI-compatible AI brain for York.
 
-Works with OpenAI, Groq, or any OpenAI-compatible provider.
-Provider is auto-detected from environment variables (see config.py).
+Primary provider: Google Gemini 2.0 Flash (GEMINI_API_KEY).
+Fallback: Groq, Replit proxy, OpenAI (see config.py for priority order).
 
-Groq note: Render (and some other cloud hosts) have their datacenter IPs
-blocked by Groq when requests arrive via the openai SDK (httpx-based).
-For Groq we bypass the SDK entirely and use aiohttp directly — it has
-different TLS/network characteristics that pass through without a 403.
+Groq note: Render datacenter IPs are blocked by Groq at the network level.
+Groq requests use aiohttp directly to bypass the openai SDK / httpx stack,
+but this only matters if GEMINI_API_KEY is absent and GROQ_API_KEY is set.
 """
 from __future__ import annotations
 
@@ -39,9 +38,6 @@ def _is_groq() -> bool:
     return "groq.com" in (settings.ai_url or "")
 
 
-def _is_openrouter() -> bool:
-    return "openrouter.ai" in (settings.ai_url or "")
-
 
 async def _groq_chat(messages: List[dict], model: str, max_tokens: int) -> str:
     """Call Groq directly via aiohttp, bypassing the openai SDK / httpx stack."""
@@ -68,11 +64,6 @@ def client() -> AsyncOpenAI | None:
         kwargs: dict = {"api_key": key}
         if settings.ai_url:
             kwargs["base_url"] = settings.ai_url
-        if _is_openrouter():
-            kwargs["default_headers"] = {
-                "HTTP-Referer": "https://github.com/york-discord-bot",
-                "X-Title": "York Discord Bot",
-            }
         _client = AsyncOpenAI(**kwargs)
     return _client
 
@@ -142,7 +133,7 @@ async def chat(messages: List[dict]) -> str:
     if not settings.ai_key:
         return (
             "My AI module is currently offline. "
-            "Set GROQ_API_KEY or OPENAI_API_KEY in your environment variables."
+            "Set GEMINI_API_KEY in your environment variables."
         )
     try:
         # Groq: use aiohttp directly to avoid the httpx fingerprint that

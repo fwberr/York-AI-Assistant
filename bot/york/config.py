@@ -10,27 +10,28 @@ def _resolve_ai_provider() -> tuple[str, str, str]:
     """Return (api_key, base_url, default_model) based on available env vars.
 
     Priority:
-    1. GROQ_API_KEY          → Groq endpoint, llama-3.3-70b-versatile
-    2. AI_INTEGRATIONS vars  → Replit AI proxy
-    3. OPENAI_API_KEY        → OpenAI directly, gpt-4o-mini
-    4. Nothing               → empty (AI offline)
+    1. GEMINI_API_KEY        → Google Gemini 2.0 Flash (free, 1500/day, no IP blocks)
+    2. GROQ_API_KEY          → Groq endpoint, llama-3.3-70b-versatile
+    3. AI_INTEGRATIONS vars  → Replit AI proxy
+    4. OPENAI_API_KEY        → OpenAI directly, gpt-4o-mini
+    5. Nothing               → empty (AI offline)
 
     YORK_MODEL always overrides the default model if set.
     YORK_BASE_URL always overrides the base URL if set.
     """
-    openrouter_key = os.getenv("OPENROUTER_API_KEY", "")
-    groq_key       = os.getenv("GROQ_API_KEY", "")
-    proxy_key      = os.getenv("AI_INTEGRATIONS_OPENAI_API_KEY", "")
-    proxy_url      = os.getenv("AI_INTEGRATIONS_OPENAI_BASE_URL", "")
-    openai_key     = os.getenv("OPENAI_API_KEY", "")
-    custom_url     = os.getenv("YORK_BASE_URL", "")
-    custom_mdl     = os.getenv("YORK_MODEL", "")
+    gemini_key = os.getenv("GEMINI_API_KEY", "")
+    groq_key   = os.getenv("GROQ_API_KEY", "")
+    proxy_key  = os.getenv("AI_INTEGRATIONS_OPENAI_API_KEY", "")
+    proxy_url  = os.getenv("AI_INTEGRATIONS_OPENAI_BASE_URL", "")
+    openai_key = os.getenv("OPENAI_API_KEY", "")
+    custom_url = os.getenv("YORK_BASE_URL", "")
+    custom_mdl = os.getenv("YORK_MODEL", "")
 
-    if openrouter_key:
-        # OpenRouter: free Llama 3.3 70B, works from all cloud hosts (no IP blocks).
-        key   = openrouter_key
-        url   = custom_url or "https://openrouter.ai/api/v1"
-        model = custom_mdl or "meta-llama/llama-3.3-70b-instruct:free"
+    if gemini_key:
+        # Gemini: free tier, 1500 req/day, works from all cloud hosts.
+        key   = gemini_key
+        url   = custom_url or "https://generativelanguage.googleapis.com/v1beta/openai/"
+        model = custom_mdl or "gemini-2.0-flash"
     elif groq_key:
         key   = groq_key
         url   = custom_url or "https://api.groq.com/openai/v1"
