@@ -46,6 +46,34 @@ def _resolve_ai_provider() -> tuple[str, str, str]:
 _AI_KEY, _AI_URL, _AI_MODEL = _resolve_ai_provider()
 
 
+def _resolve_data_dir() -> Path:
+    """Return a writable data directory, falling back gracefully if the
+    configured path isn't accessible (e.g. Render free tier without a disk)."""
+    import logging
+    candidates = [
+        os.getenv("DATA_DIR", ""),
+        "bot/data",
+        "/tmp/york_data",
+    ]
+    for candidate in candidates:
+        if not candidate:
+            continue
+        p = Path(candidate)
+        try:
+            p.mkdir(parents=True, exist_ok=True)
+            # Quick write-test
+            test = p / ".write_test"
+            test.touch()
+            test.unlink()
+            return p
+        except (PermissionError, OSError):
+            logging.getLogger("york.config").warning(
+                "DATA_DIR %s is not writable, trying fallback…", candidate
+            )
+    # Last-resort: current working directory
+    return Path(".")
+
+
 @dataclass(frozen=True)
 class Emoji:
     ok: str     = os.getenv("YORK_EMOJI_OK",     "◆")
@@ -88,8 +116,9 @@ class Settings:
     # ---- Data persistence ----
     # Set DATA_DIR to a persistent volume path on your host so player
     # data (coins, XP, marriages, warnings) survives bot updates/redeploys.
-    # e.g. DATA_DIR=/data  on Render/Katabump
-    data_dir: Path = field(default_factory=lambda: Path(os.getenv("DATA_DIR", "bot/data")))
+    # e.g. DATA_DIR=/opt/render/project/src/data  on Render (free tier)
+    #      DATA_DIR=/data  on Render paid tier with a mounted disk
+    data_dir: Path = field(default_factory=lambda: _resolve_data_dir())
 
     # ---- Conversation ----
     wake_phrases: tuple[str, ...] = ("hey york", "hi york", "yo york", "york,", "york!")
