@@ -112,11 +112,7 @@ class HelpSelect(discord.ui.Select):
             extra_sections=[(field_text, None)],
             footer=f"{settings.bot_name} · built by {settings.creator}",
         )
-        await interaction.response.send_message(
-            components=[container],
-            flags=discord.MessageFlags(components_v2=True),
-            ephemeral=True,
-        )
+        await interaction.response.send_message(embed=container, ephemeral=True)
 
 
 class HelpView(discord.ui.View):

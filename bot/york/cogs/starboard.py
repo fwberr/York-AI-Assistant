@@ -280,7 +280,7 @@ class Starboard(commands.Cog):
         message: discord.Message,
         star_count: int,
         watch_emoji: str,
-    ) -> discord.ui.Container:
+    ) -> discord.Embed:
         author = message.author
         jump = f"[Jump to message]({message.jump_url})"
         channel_ref = f"<#{message.channel.id}>"
@@ -323,10 +323,7 @@ class Starboard(commands.Cog):
         watch_emoji: str,
     ) -> discord.Message:
         container = await self._build_starboard_container(message, star_count, watch_emoji)
-        return await sb_channel.send(
-            components=[container],
-            flags=discord.MessageFlags(components_v2=True),
-        )
+        return await sb_channel.send(embed=container)
 
     async def _edit_starboard_message(
         self,
@@ -336,10 +333,7 @@ class Starboard(commands.Cog):
         watch_emoji: str,
     ) -> None:
         container = await self._build_starboard_container(original, star_count, watch_emoji)
-        await sb_msg.edit(
-            components=[container],
-            flags=discord.MessageFlags(components_v2=True),
-        )
+        await sb_msg.edit(embed=container)
 
     # -------- error handler --------
     async def cog_command_error(self, ctx: commands.Context, error: Exception):

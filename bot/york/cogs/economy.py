@@ -584,7 +584,7 @@ class _BlackjackView(discord.ui.View):
         if not self.finished:
             await self._dealer_play_and_finish(reason="Timed out — auto-stand.")
 
-    def render(self, opening: bool = False) -> discord.ui.Container:
+    def render(self, opening: bool = False) -> discord.Embed:
         pv = _hand_value(self.player_hand)
         if self.finished:
             dv = _hand_value(self.dealer_hand)
@@ -636,8 +636,7 @@ class _BlackjackView(discord.ui.View):
             await self._dealer_play_and_finish()
             return
         await interaction.response.edit_message(
-            components=[self.render()],
-            flags=discord.MessageFlags(components_v2=True),
+            embed=self.render(),
             view=self,
         )
 

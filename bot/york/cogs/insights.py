@@ -40,11 +40,7 @@ class RoleSelect(discord.ui.Select):
                 ("Created", discord.utils.format_dt(role.created_at, "R")),
             ],
         )
-        await interaction.response.send_message(
-            components=[container],
-            flags=discord.MessageFlags(components_v2=True),
-            ephemeral=True,
-        )
+        await interaction.response.send_message(embed=container, ephemeral=True)
 
 
 class RoleView(discord.ui.View):

@@ -197,13 +197,10 @@ class Fun(commands.Cog):
 
         if leveled:
             try:
-                await message.channel.send(
-                    components=[v2.success(
-                        f"{settings.emoji.spark}  Level Up!",
-                        f"{message.author.mention} reached **level {lvl}** and earned **{bonus}** bonus coins.",
-                    )],
-                    flags=discord.MessageFlags(components_v2=True),
-                )
+                await message.channel.send(embed=v2.success(
+                    f"{settings.emoji.spark}  Level Up!",
+                    f"{message.author.mention} reached **level {lvl}** and earned **{bonus}** bonus coins.",
+                ))
             except discord.HTTPException:
                 pass
 

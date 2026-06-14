@@ -1,0 +1,100 @@
+2026-06-14T23:16:00.911629702Z ==> Running 'python bot/york.py'
+2026-06-14T23:16:10.059779069Z DATA_DIR /data is not writable, trying fallback…
+2026-06-14T23:16:11.325392428Z 2026-06-14 23:16:11,325 | WARNING | york | OPENAI_API_KEY missing — AI conversation will be disabled.
+2026-06-14T23:16:11.329949125Z 2026-06-14 23:16:11,328 | INFO    | york.keepalive | Keep-alive server listening on http://0.0.0.0:10000
+2026-06-14T23:16:11.329963345Z 2026-06-14 23:16:11,328 | WARNING | discord.client | PyNaCl is not installed, voice will NOT be supported
+2026-06-14T23:16:11.329969315Z 2026-06-14 23:16:11,328 | WARNING | discord.client | davey is not installed, voice will NOT be supported
+2026-06-14T23:16:11.329974445Z 2026-06-14 23:16:11,328 | INFO    | discord.client | logging in using static token
+2026-06-14T23:16:12.134707892Z 2026-06-14 23:16:12,134 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:16:12 +0000] "HEAD / HTTP/1.1" 200 153 "-" "Go-http-client/1.1"
+2026-06-14T23:16:20.823992296Z 2026-06-14 23:16:20,823 | INFO    | york | Loaded extension: york.cogs.conversation
+2026-06-14T23:16:20.916393949Z 2026-06-14 23:16:20,916 | INFO    | york | Loaded extension: york.cogs.moderation
+2026-06-14T23:16:21.21229878Z 2026-06-14 23:16:21,212 | INFO    | york | Loaded extension: york.cogs.insights
+2026-06-14T23:16:21.217635211Z 2026-06-14 23:16:21,217 | INFO    | york | Loaded extension: york.cogs.fun
+2026-06-14T23:16:21.319314718Z 2026-06-14 23:16:21,319 | INFO    | york | Loaded extension: york.cogs.economy
+2026-06-14T23:16:21.334186439Z 2026-06-14 23:16:21,334 | INFO    | york | Loaded extension: york.cogs.fishing
+2026-06-14T23:16:21.415304439Z 2026-06-14 23:16:21,415 | INFO    | york | Loaded extension: york.cogs.starboard
+2026-06-14T23:16:21.431128837Z 2026-06-14 23:16:21,430 | INFO    | york | Loaded extension: york.cogs.proactive
+2026-06-14T23:16:21.438567887Z 2026-06-14 23:16:21,438 | INFO    | york | Loaded extension: york.cogs.help_cog
+2026-06-14T23:16:22.02724923Z 2026-06-14 23:16:22,026 | INFO    | york | Synced 48 slash commands
+2026-06-14T23:16:22.29240457Z ==> Your service is live 🎉
+2026-06-14T23:16:22.359738861Z 2026-06-14 23:16:22,359 | INFO    | discord.gateway | Shard ID None has connected to Gateway (Session ID: 8310c7bdbcb42be4ce4fedc67bd08f96).
+2026-06-14T23:16:22.477133589Z ==> 
+2026-06-14T23:16:22.47996864Z ==> ///////////////////////////////////////////////////////////
+2026-06-14T23:16:22.48224688Z ==> 
+2026-06-14T23:16:22.484584763Z ==> Available at your primary URL https://york-ai-assistant-1.onrender.com
+2026-06-14T23:16:22.486577008Z ==> 
+2026-06-14T23:16:22.488760158Z ==> ///////////////////////////////////////////////////////////
+2026-06-14T23:16:22.826005515Z 2026-06-14 23:16:22,825 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:16:22 +0000] "GET / HTTP/1.1" 200 168 "-" "Go-http-client/2.0"
+2026-06-14T23:16:24.827086377Z 2026-06-14 23:16:24,826 | INFO    | york | York online as York#2771 (id=1496154816206864434)
+2026-06-14T23:16:40.820972211Z 2026-06-14 23:16:40,820 | INFO    | httpx | HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 403 Forbidden"
+2026-06-14T23:16:40.827959053Z 2026-06-14 23:16:40,822 | ERROR   | york.ai | AI call failed: Error code: 403 - {'error': {'message': 'Access denied. Please check your network settings.'}}
+2026-06-14T23:16:40.827974843Z Traceback (most recent call last):
+2026-06-14T23:16:40.827981413Z   File "/opt/render/project/src/bot/york/ai.py", line 120, in chat
+2026-06-14T23:16:40.827986143Z     resp = await c.chat.completions.create(**kwargs)
+2026-06-14T23:16:40.827990114Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:16:40.827994483Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/openai/resources/chat/completions/completions.py", line 2814, in create
+2026-06-14T23:16:40.827998804Z     return await self._post(
+2026-06-14T23:16:40.828002434Z            ^^^^^^^^^^^^^^^^^
+2026-06-14T23:16:40.828006614Z     ...<54 lines>...
+2026-06-14T23:16:40.828010484Z     )
+2026-06-14T23:16:40.828014244Z     ^
+2026-06-14T23:16:40.828018684Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/openai/_base_client.py", line 1931, in post
+2026-06-14T23:16:40.828034994Z     return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+2026-06-14T23:16:40.828037964Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:16:40.828041224Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/openai/_base_client.py", line 1716, in request
+2026-06-14T23:16:40.828043744Z     raise self._make_status_error_from_response(err.response) from None
+2026-06-14T23:16:40.828046184Z openai.PermissionDeniedError: Error code: 403 - {'error': {'message': 'Access denied. Please check your network settings.'}}
+2026-06-14T23:16:45.261276358Z 2026-06-14 23:16:45,256 | ERROR   | discord.ext.commands.bot | Ignoring exception in command help
+2026-06-14T23:16:45.261295549Z Traceback (most recent call last):
+2026-06-14T23:16:45.261299819Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/core.py", line 266, in wrapped
+2026-06-14T23:16:45.261302569Z     ret = await coro(*args, **kwargs)
+2026-06-14T23:16:45.261305219Z           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:16:45.261308459Z   File "/opt/render/project/src/bot/york/cogs/help_cog.py", line 142, in help_cmd
+2026-06-14T23:16:45.261311769Z     await v2.send(ctx, container, view=HelpView())
+2026-06-14T23:16:45.261314999Z   File "/opt/render/project/src/bot/york/v2.py", line 184, in send
+2026-06-14T23:16:45.261317829Z     return await ctx.send(**kwargs)
+2026-06-14T23:16:45.261320449Z                  ~~~~~~~~^^^^^^^^^^
+2026-06-14T23:16:45.261323159Z TypeError: Context.send() got an unexpected keyword argument 'components'
+2026-06-14T23:16:45.261325809Z 
+2026-06-14T23:16:45.261328519Z The above exception was the direct cause of the following exception:
+2026-06-14T23:16:45.261331079Z 
+2026-06-14T23:16:45.261333619Z Traceback (most recent call last):
+2026-06-14T23:16:45.26133641Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 1376, in invoke
+2026-06-14T23:16:45.26133927Z     await ctx.command.invoke(ctx)
+2026-06-14T23:16:45.26134192Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/core.py", line 1064, in invoke
+2026-06-14T23:16:45.26134458Z     await injected(*ctx.args, **ctx.kwargs)  # type: ignore
+2026-06-14T23:16:45.26134726Z     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:16:45.26134991Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/core.py", line 275, in wrapped
+2026-06-14T23:16:45.26135247Z     raise CommandInvokeError(exc) from exc
+2026-06-14T23:16:45.26135561Z discord.ext.commands.errors.CommandInvokeError: Command raised an exception: TypeError: Context.send() got an unexpected keyword argument 'components'
+2026-06-14T23:17:10.122365872Z 2026-06-14 23:17:10,119 | ERROR   | discord.ext.commands.bot | Ignoring exception in command leaderboard
+2026-06-14T23:17:10.122391473Z Traceback (most recent call last):
+2026-06-14T23:17:10.122397253Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/app_commands/commands.py", line 858, in _do_call
+2026-06-14T23:17:10.122402083Z     return await self._callback(self.binding, interaction, **params)  # type: ignore
+2026-06-14T23:17:10.122406613Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:17:10.122413243Z   File "/opt/render/project/src/bot/york/cogs/fun.py", line 289, in leaderboard
+2026-06-14T23:17:10.122417363Z     await v2.send(ctx, v2.info("Leaderboard", "\n".join(lines) or "No data yet."))
+2026-06-14T23:17:10.122421154Z   File "/opt/render/project/src/bot/york/v2.py", line 184, in send
+2026-06-14T23:17:10.122425003Z     return await ctx.send(**kwargs)
+2026-06-14T23:17:10.122437714Z                  ~~~~~~~~^^^^^^^^^^
+2026-06-14T23:17:10.122440464Z TypeError: Context.send() got an unexpected keyword argument 'components'
+2026-06-14T23:17:10.122442724Z 
+2026-06-14T23:17:10.122445024Z The above exception was the direct cause of the following exception:
+2026-06-14T23:17:10.122447274Z 
+2026-06-14T23:17:10.122449514Z Traceback (most recent call last):
+2026-06-14T23:17:10.122452354Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/hybrid.py", line 463, in _invoke_with_namespace
+2026-06-14T23:17:10.122455464Z     value = await self._do_call(ctx, ctx.kwargs)  # type: ignore
+2026-06-14T23:17:10.122457794Z             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:17:10.122460204Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/app_commands/commands.py", line 873, in _do_call
+2026-06-14T23:17:10.122462824Z     raise CommandInvokeError(self, e) from e
+2026-06-14T23:17:10.122465834Z discord.app_commands.errors.CommandInvokeError: Command 'leaderboard' raised an exception: TypeError: Context.send() got an unexpected keyword argument 'components'
+2026-06-14T23:17:10.122467974Z 
+2026-06-14T23:17:10.122470174Z The above exception was the direct cause of the following exception:
+2026-06-14T23:17:10.122472284Z 
+2026-06-14T23:17:10.122474555Z Traceback (most recent call last):
+2026-06-14T23:17:10.122476995Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/hybrid.py", line 463, in _invoke_with_namespace
+2026-06-14T23:17:10.122479375Z     value = await self._do_call(ctx, ctx.kwargs)  # type: ignore
+2026-06-14T23:17:10.122481635Z             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:17:10.122483965Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/app_commands/commands.py", line 873, in _do_call
+2026-06-14T23:17:10.122486415Z     raise CommandInvokeError(self, e) from e
+2026-06-14T23:17:10.122489475Z discord.ext.commands.errors.HybridCommandError: Hybrid command raised an error: Command 'leaderboard' raised an exception: TypeError: Context.send() got an unexpected keyword argument 'components'

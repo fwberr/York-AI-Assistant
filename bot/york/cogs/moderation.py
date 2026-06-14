@@ -195,7 +195,7 @@ class Moderation(commands.Cog):
                 ],
                 footer=f"{settings.bot_name} · built by {settings.creator}",
             )
-            await member.send(components=[dm_c], flags=discord.MessageFlags(components_v2=True))
+            await member.send(embed=dm_c)
         except discord.Forbidden:
             pass
 
@@ -294,11 +294,7 @@ class Moderation(commands.Cog):
         deleted = await ctx.channel.purge(limit=amount + (0 if ctx.interaction else 1))
         container = v2.success("Purge Complete", f"Removed **{len(deleted)}** messages.")
         if ctx.interaction:
-            await ctx.interaction.followup.send(
-                components=[container],
-                flags=discord.MessageFlags(components_v2=True),
-                ephemeral=True,
-            )
+            await ctx.interaction.followup.send(embed=container, ephemeral=True)
         else:
             await v2.send(ctx, container)
 
