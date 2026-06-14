@@ -139,11 +139,13 @@ class Fishing(commands.Cog):
             "You found something inside!",
             fields=[
                 ("Item",        item["name"]),
+                ("Item ID",     f"`{loot_id}`"),
                 ("Rarity",      rarity_label),
                 ("Sell Value",  f"{item['sell']:,} coins" if item["sell"] > 0 else "Worthless junk"),
                 ("Description", item["desc"]),
+                ("To Sell",     f"`!sell {loot_id}`"),
             ],
-            footer=f"Sell it with !sell {loot_id} · {settings.bot_name} · built by {settings.creator}",
+            footer=f"{settings.bot_name} · built by {settings.creator}",
         ))
 
     # ---------- work ----------
