@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "python-3.11", "web"]
+modules = ["python-3.11", "nodejs-20", "web"]
 
 [deployment]
 router = "application"
@@ -61,7 +61,7 @@ PORT = "8081"
 BASE_PATH = "/__mockup"
 
 [agent]
-stack = "PNPM_WORKSPACE"
+stack = "BEST_EFFORT_FALLBACK"
 expertMode = true
 
 [postMerge]
