@@ -13,10 +13,11 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .. import embeds
+from .. import v2
 from ..config import settings
 
-PROFILES = Path("bot/data/profiles.json")
+# Use DATA_DIR from settings so data persists across bot updates / redeployments.
+PROFILES: Path = settings.data_dir / "profiles.json"
 PROFILES.parent.mkdir(parents=True, exist_ok=True)
 
 
@@ -42,17 +43,10 @@ def _profile(d: Dict[str, dict], uid: int) -> dict:
 
 
 def _xp_for_next(level: int) -> int:
-    """XP needed to advance from `level` to `level+1`.
-
-    Mirrors the curve Arcane / MEE6 use: 5*n^2 + 50*n + 100.
-    Each level needs noticeably more XP than the last, so growth slows
-    naturally the higher you go.
-    """
     return 25 * (level ** 2) + 250 * level + 500
 
 
 def _grant_xp(p: dict, amount: int) -> tuple[bool, int, int]:
-    """Add XP, auto-leveling. Returns (did_level, new_level, coin_bonus)."""
     p["xp"] += amount
     leveled = False
     coin_bonus = 0
@@ -68,8 +62,6 @@ def _grant_xp(p: dict, amount: int) -> tuple[bool, int, int]:
     return leveled, p["level"], coin_bonus
 
 
-# Anime-style SFW reaction GIF categories served by nekos.best. Public,
-# no auth, curated SFW only. NSFW endpoints are never referenced here.
 GIF_CATEGORIES: set[str] = {
     "baka", "bite", "blush", "bored", "cry", "cuddle", "dance", "facepalm",
     "feed", "handhold", "happy", "highfive", "hug", "kick", "kiss", "laugh",
@@ -77,7 +69,6 @@ GIF_CATEGORIES: set[str] = {
     "shoot", "shrug", "sleep", "slap", "smile", "smug", "stare", "think",
     "thumbsup", "tickle", "wave", "wink", "yawn", "yeet",
 }
-# Aliases between user-facing action names and nekos.best endpoint names.
 _GIF_ALIAS = {"pet": "pat"}
 
 
@@ -100,13 +91,9 @@ async def fetch_gif(action: str) -> str | None:
         return None
 
 
-# Backwards-compat alias for code that still imports the old name.
 _fetch_gif = fetch_gif
 
 
-# Generic SFW image search powered by Openverse (free, no auth, supports
-# strict SFW filtering via mature=false). Used when a user asks York for
-# a picture of something — e.g. "show me a picture of a red panda".
 async def fetch_image(query: str) -> str | None:
     q = (query or "").strip()
     if not q:
@@ -121,7 +108,6 @@ async def fetch_image(query: str) -> str | None:
                     return None
                 data = await r.json()
                 results = data.get("results") or []
-                # Filter to image hosts Discord can embed inline.
                 ok = [
                     x for x in results
                     if (x.get("url") or "").lower().endswith((".jpg", ".jpeg", ".png", ".gif", ".webp"))
@@ -148,16 +134,7 @@ class Fun(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    # -------- social actions --------
-    async def _social(
-        self,
-        ctx: commands.Context,
-        target: discord.Member,
-        action: str,
-        verb_self: str,
-        verb_other: str,
-        key: str,
-    ):
+    async def _social(self, ctx, target, action, verb_self, verb_other, key):
         d = _load(); p = _profile(d, ctx.author.id); p[key] = p.get(key, 0) + 1
         leveled, lvl, bonus = _grant_xp(p, 5); _save(d)
 
@@ -166,44 +143,44 @@ class Fun(commands.Cog):
         else:
             desc = f"{ctx.author.mention} {verb_other} {target.mention}."
 
-        e = embeds.info(f"{settings.emoji.spark}  {action.title()}!", desc)
+        footer_text = (
+            f"Level up! Now level {lvl} (+{bonus} coins) · {settings.bot_name} · built by {settings.creator}"
+            if leveled else
+            f"{settings.bot_name} · built by {settings.creator}"
+        )
+        container = v2.build(
+            "info",
+            f"{settings.emoji.spark}  {action.title()}!",
+            desc,
+            footer=footer_text,
+        )
         gif = await _fetch_gif(action)
+        msg = await v2.send(ctx, container)
         if gif:
-            e.set_image(url=gif)
-        if leveled:
-            e.set_footer(
-                text=f"Level up! You are now level {lvl} (+{bonus} coins) · "
-                     f"{settings.bot_name} · built by {settings.creator}"
-            )
-        await ctx.send(embed=e)
+            await ctx.channel.send(gif)
 
-    @commands.hybrid_command(name="hug", description="Hug a member (with a random anime GIF).")
+    @commands.hybrid_command(name="hug", description="Hug a member.")
     async def hug(self, ctx, member: discord.Member):
         await self._social(ctx, member, "hug", "hugs themselves. Aww.", "hugs", "hugs_given")
 
-    @commands.hybrid_command(name="pet", description="Pet a member (with a random anime GIF).")
+    @commands.hybrid_command(name="pet", description="Pet a member.")
     async def pet(self, ctx, member: discord.Member):
         await self._social(ctx, member, "pet", "pats their own head.", "pets", "pets_given")
 
-    @commands.hybrid_command(name="slap", description="Slap a member (with a random anime GIF).")
+    @commands.hybrid_command(name="slap", description="Slap a member.")
     async def slap(self, ctx, member: discord.Member):
         await self._social(ctx, member, "slap", "slapped themselves. Why.", "slaps", "slaps_given")
 
-    @commands.hybrid_command(name="kiss", description="Kiss a member (with a random anime GIF).")
+    @commands.hybrid_command(name="kiss", description="Kiss a member.")
     async def kiss(self, ctx, member: discord.Member):
         await self._social(ctx, member, "kiss", "blows themselves a kiss.", "kisses", "kisses_given")
 
-    # -------- passive chat XP --------
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
-        """Award XP for chatting in the server. 60s cooldown per user
-        to keep spam-farming in check. Higher levels = bigger coin payouts
-        on level-up (handled in _grant_xp)."""
         if message.author.bot or not message.guild:
             return
         if not (message.content or "").strip():
             return
-        # Don't award XP for bot commands themselves.
         if message.content.startswith("!"):
             return
 
@@ -215,99 +192,112 @@ class Fun(commands.Cog):
 
         gained = random.randint(8, 18)
         leveled, lvl, bonus = _grant_xp(p, gained)
-        # Small per-message coin trickle that scales with level.
         p["coins"] += 1 + (lvl // 5)
         _save(d)
 
         if leveled:
             try:
                 await message.channel.send(
-                    embed=embeds.success(
-                        f"{settings.emoji.spark} Level up!",
-                        f"{message.author.mention} reached **level {lvl}** "
-                        f"and earned **{bonus}** bonus coins.",
-                    )
+                    components=[v2.success(
+                        f"{settings.emoji.spark}  Level Up!",
+                        f"{message.author.mention} reached **level {lvl}** and earned **{bonus}** bonus coins.",
+                    )],
+                    flags=discord.MessageFlags(is_components_v2=True),
                 )
             except discord.HTTPException:
                 pass
 
-    # -------- economy / rep --------
     @commands.hybrid_command(name="daily", description="Claim your daily coins.")
     async def daily(self, ctx):
         d = _load(); p = _profile(d, ctx.author.id)
         now = time.time()
         if now - p["last_daily"] < 22 * 3600:
             remaining = int(22 * 3600 - (now - p["last_daily"]))
-            await ctx.send(embed=embeds.warn("Already claimed", f"Try again in {remaining//3600}h {remaining%3600//60}m."))
+            await v2.send(ctx, v2.warn(
+                "Already Claimed",
+                f"Your next daily is available in **{remaining//3600}h {remaining%3600//60}m**.",
+            ))
             return
         amount = random.randint(80, 240)
         p["coins"] += amount; p["last_daily"] = now
         _grant_xp(p, 15); _save(d)
-        await ctx.send(embed=embeds.success("Daily claimed", f"You picked up **{amount}** coins. Balance: **{p['coins']}**."))
+        await v2.send(ctx, v2.success(
+            "Daily Reward Claimed",
+            f"You received **{amount}** coins.\nNew balance: **{p['coins']}** coins.",
+        ))
 
     @commands.hybrid_command(name="rep", description="Give a reputation point to someone.")
     async def rep(self, ctx, member: discord.Member):
         if member.id == ctx.author.id:
-            await ctx.send(embed=embeds.warn("Nope", "You can't rep yourself."))
+            await v2.send(ctx, v2.warn("Not Allowed", "You cannot give reputation to yourself."))
             return
         d = _load(); giver = _profile(d, ctx.author.id); recv = _profile(d, member.id)
         now = time.time()
         if now - giver["last_rep"] < 22 * 3600:
             remaining = int(22 * 3600 - (now - giver["last_rep"]))
-            await ctx.send(embed=embeds.warn("Wait a bit", f"Next rep in {remaining//3600}h {remaining%3600//60}m."))
+            await v2.send(ctx, v2.warn(
+                "Wait a Bit",
+                f"You can give reputation again in **{remaining//3600}h {remaining%3600//60}m**.",
+            ))
             return
-        recv["rep"] += 1; giver["last_rep"] = now
-        _save(d)
-        await ctx.send(embed=embeds.success("Rep given", f"{member.mention} now has **{recv['rep']}** rep."))
+        recv["rep"] += 1; giver["last_rep"] = now; _save(d)
+        await v2.send(ctx, v2.success(
+            "Reputation Given",
+            f"{member.mention} now has **{recv['rep']}** reputation.",
+            thumbnail_url=member.display_avatar.url,
+        ))
 
     @commands.hybrid_command(name="profile", description="Show your or someone's profile.")
     async def profile(self, ctx, member: discord.Member | None = None):
         m = member or ctx.author
         d = _load(); p = _profile(d, m.id); _save(d)
-        e = embeds.fields_embed(
+        married_to = p.get("married_to")
+        marriage_line = ""
+        if married_to:
+            spouse = ctx.guild.get_member(int(married_to)) if ctx.guild else None
+            spouse_name = spouse.display_name if spouse else f"User {married_to}"
+            ring = p.get("ring", "")
+            marriage_line = f"\n💍 Married to **{spouse_name}**" + (f" with a {ring.replace('_', ' ').title()}" if ring else "")
+
+        container = v2.build(
+            "info",
             f"{settings.emoji.member}  {m.display_name}",
-            [
-                ("Level", str(p["level"]), True),
-                ("XP", f"{p['xp']} / {_xp_for_next(p['level'])}", True),
-                ("Coins", str(p["coins"]), True),
-                ("Reputation", str(p["rep"]), True),
-                ("Hugs given", str(p.get("hugs_given", 0)), True),
-                ("Pets given", str(p.get("pets_given", 0)), True),
+            f"Level **{p['level']}** · {p['xp']}/{_xp_for_next(p['level'])} XP{marriage_line}",
+            fields=[
+                ("Coins", f"{p.get('coins', 0):,}"),
+                ("Reputation", str(p.get("rep", 0))),
+                ("Hugs Given", str(p.get("hugs_given", 0))),
+                ("Pets Given", str(p.get("pets_given", 0))),
+                ("Slaps Given", str(p.get("slaps_given", 0))),
+                ("Kisses Given", str(p.get("kisses_given", 0))),
             ],
+            thumbnail_url=m.display_avatar.url,
         )
-        e.set_thumbnail(url=m.display_avatar.url)
-        await ctx.send(embed=e)
+        await v2.send(ctx, container)
 
     @commands.hybrid_command(name="leaderboard", description="Top members by level.")
     async def leaderboard(self, ctx):
         d = _load()
         rows = sorted(d.items(), key=lambda kv: (kv[1].get("level", 1), kv[1].get("xp", 0)), reverse=True)[:10]
         lines = []
+        medals = ["🥇", "🥈", "🥉"]
         for i, (uid, p) in enumerate(rows, start=1):
             user = ctx.guild.get_member(int(uid))
             name = user.display_name if user else f"User {uid}"
-            lines.append(f"`#{i:>2}` **{name}** — Lvl {p.get('level',1)} · {p.get('coins',0)} coins")
-        await ctx.send(embed=embeds.info("Leaderboard", "\n".join(lines) or "No data yet."))
+            medal = medals[i - 1] if i <= 3 else f"`#{i:>2}`"
+            lines.append(f"{medal} **{name}** — Lvl {p.get('level', 1)} · {p.get('coins', 0):,} coins")
+        await v2.send(ctx, v2.info("Leaderboard", "\n".join(lines) or "No data yet."))
 
-    # -------- gambling --------
-    @commands.hybrid_command(
-        name="coinflip",
-        description="Flip a coin. Optionally bet coins: double or lose it all.",
-    )
-    @app_commands.describe(
-        bet="Coins to wager (or 'all'). Win = double, lose = gone.",
-        side="Your call: heads or tails.",
-    )
+    @commands.hybrid_command(name="coinflip", description="Flip a coin. Optionally bet coins.")
+    @app_commands.describe(bet="Coins to wager (or 'all').", side="heads or tails")
     async def coinflip(self, ctx: commands.Context, bet: str | None = None, side: str | None = None):
-        # Free flip — no args.
         if bet is None:
-            await ctx.send(embed=embeds.info("Coinflip", random.choice(["**Heads**", "**Tails**"])))
+            result = random.choice(["Heads", "Tails"])
+            await v2.send(ctx, v2.info("Coinflip", f"The coin landed on **{result}**."))
             return
 
         d = _load(); p = _profile(d, ctx.author.id)
         balance = p.get("coins", 0)
-
-        # Parse the wager.
         bet_l = bet.strip().lower()
         if bet_l in ("all", "max"):
             amount = balance
@@ -315,20 +305,16 @@ class Fun(commands.Cog):
             try:
                 amount = int(bet_l)
             except ValueError:
-                await ctx.send(embed=embeds.danger("Bad bet", "Bet must be a number or `all`."))
+                await v2.send(ctx, v2.danger("Bad Bet", "Bet must be a number or `all`."))
                 return
 
         if amount <= 0:
-            await ctx.send(embed=embeds.danger("Bad bet", "Bet must be positive."))
+            await v2.send(ctx, v2.danger("Bad Bet", "Bet must be positive."))
             return
         if amount > balance:
-            await ctx.send(embed=embeds.danger(
-                "Not enough coins",
-                f"You only have **{balance}** coins. Earn more with `!daily`.",
-            ))
+            await v2.send(ctx, v2.danger("Not Enough Coins", f"You only have **{balance:,}** coins."))
             return
 
-        # Pick a side (random if not specified).
         side_l = (side or "").strip().lower()
         if side_l in ("h", "head", "heads"):
             choice = "heads"
@@ -337,7 +323,7 @@ class Fun(commands.Cog):
         elif side_l == "":
             choice = random.choice(["heads", "tails"])
         else:
-            await ctx.send(embed=embeds.danger("Bad side", "Pick `heads` or `tails` (or leave blank)."))
+            await v2.send(ctx, v2.danger("Bad Side", "Pick `heads` or `tails`."))
             return
 
         result = random.choice(["heads", "tails"])
@@ -346,39 +332,39 @@ class Fun(commands.Cog):
         if won:
             p["coins"] = balance + amount
             _grant_xp(p, 5); _save(d)
-            e = embeds.success(
-                f"{settings.emoji.spark} It's {result.title()} — you win!",
+            await v2.send(ctx, v2.success(
+                f"{settings.emoji.spark}  {result.title()} — You Win!",
                 f"You called **{choice}** and doubled your bet.\n"
-                f"**+{amount}** coins · new balance: **{p['coins']}**",
-            )
+                f"**+{amount:,}** coins · New balance: **{p['coins']:,}**",
+            ))
         else:
-            p["coins"] = balance - amount
-            _save(d)
-            e = embeds.danger(
-                f"It's {result.title()} — you lose.",
-                f"You called **{choice}**. Coin disagreed.\n"
-                f"**−{amount}** coins · new balance: **{p['coins']}**",
-            )
-        await ctx.send(embed=e)
+            p["coins"] = balance - amount; _save(d)
+            await v2.send(ctx, v2.danger(
+                f"{result.title()} — You Lose.",
+                f"You called **{choice}** — the coin disagreed.\n"
+                f"**−{amount:,}** coins · New balance: **{p['coins']:,}**",
+            ))
 
     @commands.hybrid_command(name="gamble", description="Pure 50/50: bet coins, win double or lose it all.")
     @app_commands.describe(bet="Coins to wager (or 'all').")
     async def gamble(self, ctx: commands.Context, bet: str):
-        # Same mechanics as coinflip but always random side.
         await self.coinflip(ctx, bet=bet, side=None)
 
     @commands.hybrid_command(name="roll", description="Roll a dice (default d20).")
     async def roll(self, ctx, sides: int = 20):
         sides = max(2, min(1000, sides))
-        await ctx.send(embed=embeds.info(f"Rolled d{sides}", f"**{random.randint(1, sides)}**"))
+        await v2.send(ctx, v2.info(f"Rolled d{sides}", f"You rolled a **{random.randint(1, sides)}**."))
 
     @commands.hybrid_command(name="8ball", description="Ask the magic 8-ball.")
     async def eightball(self, ctx, *, question: str):
-        await ctx.send(embed=embeds.info("Magic 8-ball", f"**Q:** {question}\n**A:** {random.choice(_8BALL)}"))
+        await v2.send(ctx, v2.info(
+            "Magic 8-Ball",
+            f"**Question:** {question}\n**Answer:** {random.choice(_8BALL)}",
+        ))
 
-    @commands.hybrid_command(name="say", description="Make York say something in an embed.")
+    @commands.hybrid_command(name="say", description="Make York say something.")
     async def say(self, ctx, *, message: str):
-        await ctx.send(embed=embeds.info("York", message))
+        await v2.send(ctx, v2.info("York", message))
 
 
 async def setup(bot: commands.Bot) -> None:

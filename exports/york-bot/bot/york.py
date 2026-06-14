@@ -16,6 +16,7 @@ import discord
 from discord.ext import commands
 
 from york.config import settings
+from york.keepalive import start as start_keepalive
 from york.memory import MemoryStore
 
 logging.basicConfig(
@@ -34,7 +35,8 @@ class York(commands.Bot):
             help_command=None,
             description="York — your in-server Jarvis. Created by Berry.",
         )
-        self.memory = MemoryStore(Path("bot/data/memory.json"))
+        # Use DATA_DIR from settings so memory persists across deploys.
+        self.memory = MemoryStore(settings.data_dir / "memory.json")
 
     async def setup_hook(self) -> None:
         for ext in (
@@ -43,18 +45,19 @@ class York(commands.Bot):
             "york.cogs.insights",
             "york.cogs.fun",
             "york.cogs.economy",
+            "york.cogs.fishing",
             "york.cogs.proactive",
             "york.cogs.help_cog",
         ):
             try:
                 await self.load_extension(ext)
                 log.info("Loaded extension: %s", ext)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 log.exception("Failed to load %s: %s", ext, exc)
         try:
             synced = await self.tree.sync()
             log.info("Synced %d slash commands", len(synced))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log.warning("Slash sync failed: %s", exc)
 
     async def on_ready(self) -> None:
@@ -75,9 +78,14 @@ async def main() -> None:
     if not settings.openai_key:
         log.warning("OPENAI_API_KEY missing — AI conversation will be disabled.")
 
+    keepalive_runner = await start_keepalive()
+
     bot = York()
-    async with bot:
-        await bot.start(settings.discord_token)
+    try:
+        async with bot:
+            await bot.start(settings.discord_token)
+    finally:
+        await keepalive_runner.cleanup()
 
 
 if __name__ == "__main__":

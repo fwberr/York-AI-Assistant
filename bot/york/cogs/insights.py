@@ -7,7 +7,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .. import embeds
+from .. import v2
 from ..config import settings
 
 
@@ -17,7 +17,7 @@ class RoleSelect(discord.ui.Select):
             discord.SelectOption(
                 label=(r.name or "role")[:90],
                 value=str(r.id),
-                description=f"{len(r.members)} members - pos {r.position}"[:90],
+                description=f"{len(r.members)} members · pos {r.position}"[:90],
             )
             for r in roles[:25]
         ]
@@ -26,20 +26,25 @@ class RoleSelect(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         role = interaction.guild.get_role(int(self.values[0]))
         if not role:
-            await interaction.response.send_message("Role vanished.", ephemeral=True)
+            await interaction.response.send_message("Role not found.", ephemeral=True)
             return
-        e = embeds.fields_embed(
-            f"Role · {role.name}",
-            [
-                ("Members", str(len(role.members)), True),
-                ("Color", str(role.color), True),
-                ("Hoisted", "yes" if role.hoist else "no", True),
-                ("Mentionable", "yes" if role.mentionable else "no", True),
-                ("Position", str(role.position), True),
-                ("Created", discord.utils.format_dt(role.created_at, "R"), True),
+        container = v2.build(
+            "info",
+            f"{settings.emoji.role}  Role · {role.name}",
+            fields=[
+                ("Members", str(len(role.members))),
+                ("Color", str(role.color)),
+                ("Hoisted", "Yes" if role.hoist else "No"),
+                ("Mentionable", "Yes" if role.mentionable else "No"),
+                ("Position", str(role.position)),
+                ("Created", discord.utils.format_dt(role.created_at, "R")),
             ],
         )
-        await interaction.response.send_message(embed=e, ephemeral=True)
+        await interaction.response.send_message(
+            components=[container],
+            flags=discord.MessageFlags(is_components_v2=True),
+            ephemeral=True,
+        )
 
 
 class RoleView(discord.ui.View):
@@ -57,62 +62,69 @@ class Insights(commands.Cog):
         g = ctx.guild
         humans = sum(1 for m in g.members if not m.bot)
         bots = g.member_count - humans
-        e = embeds.fields_embed(
+        container = v2.build(
+            "info",
             f"{settings.emoji.crown}  {g.name}",
-            [
-                ("Members", f"{g.member_count} ({humans} humans · {bots} bots)", True),
-                ("Channels", f"{len(g.text_channels)} text · {len(g.voice_channels)} voice", True),
-                ("Roles", str(len(g.roles)), True),
-                ("Owner", g.owner.mention if g.owner else "—", True),
-                ("Boosts", f"Lvl {g.premium_tier} · {g.premium_subscription_count} boosts", True),
-                ("Created", discord.utils.format_dt(g.created_at, "R"), True),
+            f"Server ID `{g.id}`",
+            fields=[
+                ("Owner", g.owner.mention if g.owner else "—"),
+                ("Created", discord.utils.format_dt(g.created_at, "R")),
+                ("Members", f"{g.member_count} total · {humans} humans · {bots} bots"),
+                ("Channels", f"{len(g.text_channels)} text · {len(g.voice_channels)} voice"),
+                ("Roles", str(len(g.roles))),
+                ("Boosts", f"Tier {g.premium_tier} · {g.premium_subscription_count} boosts"),
             ],
+            thumbnail_url=g.icon.url if g.icon else None,
         )
-        if g.icon:
-            e.set_thumbnail(url=g.icon.url)
-        await ctx.send(embed=e)
+        await v2.send(ctx, container)
 
     @commands.hybrid_command(name="userinfo", description="Show details about a member.")
     async def userinfo(self, ctx: commands.Context, member: discord.Member | None = None):
         m = member or ctx.author
         roles = ", ".join(r.mention for r in reversed(m.roles[1:])) or "—"
-        e = embeds.fields_embed(
+        container = v2.build(
+            "info",
             f"{settings.emoji.member}  {m.display_name}",
-            [
-                ("Tag", str(m), True),
-                ("ID", str(m.id), True),
-                ("Bot", "yes" if m.bot else "no", True),
-                ("Joined server", discord.utils.format_dt(m.joined_at, "R") if m.joined_at else "—", True),
-                ("Account created", discord.utils.format_dt(m.created_at, "R"), True),
-                ("Top role", m.top_role.mention, True),
-                (f"Roles ({len(m.roles)-1})", roles[:1024], False),
+            f"Tag: `{m}` · ID: `{m.id}`",
+            fields=[
+                ("Joined Server", discord.utils.format_dt(m.joined_at, "R") if m.joined_at else "—"),
+                ("Account Created", discord.utils.format_dt(m.created_at, "R")),
+                ("Top Role", m.top_role.mention),
+                ("Bot", "Yes" if m.bot else "No"),
             ],
+            extra_sections=[(f"**Roles ({len(m.roles)-1})**\n{roles[:1000]}", None)],
+            thumbnail_url=m.display_avatar.url,
         )
-        e.set_thumbnail(url=m.display_avatar.url)
-        await ctx.send(embed=e)
+        await v2.send(ctx, container)
 
     @commands.hybrid_command(name="roles", description="List server roles (interactive).")
     async def roles(self, ctx: commands.Context):
         roles = sorted([r for r in ctx.guild.roles if not r.is_default()], key=lambda r: -r.position)
         if not roles:
-            await ctx.send(embed=embeds.info("Roles", "No custom roles."))
+            await v2.send(ctx, v2.info("Roles", "No custom roles on this server."))
             return
-        preview = "\n".join(f"{settings.emoji.role} {r.mention} — {len(r.members)} members" for r in roles[:15])
-        more = f"\n…and {len(roles)-15} more" if len(roles) > 15 else ""
-        await ctx.send(embed=embeds.info("Roles", preview + more), view=RoleView(roles))
+        preview = "\n".join(
+            f"{settings.emoji.role} {r.mention} — {len(r.members)} member{'s' if len(r.members) != 1 else ''}"
+            for r in roles[:15]
+        )
+        more = f"\n*…and {len(roles)-15} more*" if len(roles) > 15 else ""
+        container = v2.info(f"Roles ({len(roles)})", preview + more)
+        await v2.send(ctx, container, view=RoleView(roles))
 
     @commands.hybrid_command(name="members", description="Quick member counts.")
     async def members(self, ctx: commands.Context):
         g = ctx.guild
         online = sum(1 for m in g.members if m.status != discord.Status.offline and not m.bot)
-        await ctx.send(embed=embeds.fields_embed(
+        container = v2.build(
+            "info",
             "Members",
-            [
-                ("Total", str(g.member_count), True),
-                ("Online (humans)", str(online), True),
-                ("Bots", str(sum(1 for m in g.members if m.bot)), True),
+            fields=[
+                ("Total", str(g.member_count)),
+                ("Humans Online", str(online)),
+                ("Bots", str(sum(1 for m in g.members if m.bot))),
             ],
-        ))
+        )
+        await v2.send(ctx, container)
 
     @commands.hybrid_command(name="channels", description="List channels grouped by category.")
     async def channels(self, ctx: commands.Context):
@@ -120,15 +132,20 @@ class Insights(commands.Cog):
         for cat in ctx.guild.categories:
             kids = ", ".join(f"#{c.name}" for c in cat.channels[:10])
             lines.append(f"**{cat.name}** — {kids or '—'}")
-        loose = [c for c in ctx.guild.channels if c.category is None and isinstance(c, (discord.TextChannel, discord.VoiceChannel))]
+        loose = [
+            c for c in ctx.guild.channels
+            if c.category is None and isinstance(c, (discord.TextChannel, discord.VoiceChannel))
+        ]
         if loose:
             lines.append("**Uncategorized** — " + ", ".join(f"#{c.name}" for c in loose[:10]))
-        await ctx.send(embed=embeds.info("Channels", "\n".join(lines)[:4000] or "No channels."))
+        await v2.send(ctx, v2.info("Channels", "\n".join(lines)[:3900] or "No channels."))
 
     @commands.hybrid_command(name="avatar", description="Show a member's avatar.")
     async def avatar(self, ctx: commands.Context, member: discord.Member | None = None):
         m = member or ctx.author
-        e = embeds.info(f"Avatar — {m.display_name}")
+        # For avatars, V1 embed works better since it supports large images natively.
+        import discord as _d
+        e = _d.Embed(title=f"Avatar — {m.display_name}", color=settings.accent_color)
         e.set_image(url=m.display_avatar.url)
         await ctx.send(embed=e)
 

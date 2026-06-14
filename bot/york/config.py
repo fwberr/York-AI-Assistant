@@ -3,17 +3,11 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass(frozen=True)
 class Emoji:
-    """Custom-icon-friendly glyphs.
-
-    Replace any value with `<:name:id>` (custom emoji) or `<a:name:id>` (animated)
-    once you've uploaded icons to a server York can see. Plain unicode glyphs
-    are kept here as safe fallbacks so nothing breaks before you do that.
-    """
-
     ok: str = os.getenv("YORK_EMOJI_OK", "◆")
     warn: str = os.getenv("YORK_EMOJI_WARN", "◈")
     error: str = os.getenv("YORK_EMOJI_ERROR", "✖")
@@ -28,6 +22,8 @@ class Emoji:
     crown: str = os.getenv("YORK_EMOJI_CROWN", "♛")
     brain: str = os.getenv("YORK_EMOJI_BRAIN", "✺")
     wave: str = os.getenv("YORK_EMOJI_WAVE", "～")
+    fish: str = os.getenv("YORK_EMOJI_FISH", "🎣")
+    crate: str = os.getenv("YORK_EMOJI_CRATE", "📦")
 
 
 @dataclass(frozen=True)
@@ -41,18 +37,17 @@ class Settings:
     bot_name: str = "York"
     creator: str = "Berry"
 
+    # Path where profiles.json / warnings.json / memory.json are stored.
+    # Set DATA_DIR=/data on Katabump (or any host) to a volume that persists
+    # across deploys so player data is never wiped.
+    data_dir: Path = field(default_factory=lambda: Path(os.getenv("DATA_DIR", "bot/data")))
+
     wake_phrases: tuple[str, ...] = ("hey york", "hi york", "yo york", "york,", "york!")
     detach_phrases: tuple[str, ...] = (
-        "enough",
-        "done",
-        "set free",
-        "detach",
-        "goodbye",
-        "bye york",
-        "stand down",
+        "enough", "done", "set free", "detach", "goodbye", "bye york", "stand down",
     )
 
-    accent_color: int = 0x6E5BFF  # York's signature lavender-violet
+    accent_color: int = 0x6E5BFF
     success_color: int = 0x4ADE80
     warn_color: int = 0xFACC15
     danger_color: int = 0xF87171

@@ -1,14 +1,4 @@
-"""Economy & relationships — pay, shop, inventory, marriage, blackjack.
-
-Builds on the same `bot/data/profiles.json` store the Fun cog uses, so
-coins are shared everywhere (chat XP, daily, gambling, blackjack, shop
-purchases, gifts to other players). New profile fields used here:
-
-* `inventory`  -> list of item ids the user owns
-* `married_to` -> user id of spouse (int) or None
-* `married_at` -> unix timestamp of marriage
-* `ring`       -> item id of the ring used for the current marriage
-"""
+"""Economy & relationships — pay, shop, buy, inventory, rob, marry, divorce, blackjack, sell."""
 from __future__ import annotations
 
 import asyncio
@@ -20,34 +10,61 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .. import embeds
+from .. import v2
 from ..config import settings
 from .fun import _load, _save, _profile, _grant_xp
-
 
 # ---------------------------------------------------------------------------
 # Shop catalog
 # ---------------------------------------------------------------------------
-# Tiered rings + a few fun trinkets. Higher price = fancier description so
-# proposing with a Celestial Halo actually feels like a flex.
 SHOP_ITEMS: dict[str, dict] = {
-    # rings (tier ascending)
-    "ring_copper":   {"name": "Copper Band",        "price":     500, "type": "ring", "desc": "A simple copper band — humble but heartfelt."},
-    "ring_silver":   {"name": "Silver Loop",        "price":   1_500, "type": "ring", "desc": "A polished silver loop with a soft shine."},
-    "ring_gold":     {"name": "Gold Ring",          "price":   4_000, "type": "ring", "desc": "Classic gold. Timeless. Heavy in the hand."},
-    "ring_rose":     {"name": "Rose-Gold Ring",     "price":   8_000, "type": "ring", "desc": "Warm pink-gold band. Elegant, vintage vibes."},
-    "ring_sapphire": {"name": "Sapphire Ring",      "price":  16_000, "type": "ring", "desc": "Deep blue sapphire set in white gold."},
-    "ring_emerald":  {"name": "Emerald Ring",       "price":  32_000, "type": "ring", "desc": "Vivid emerald flanked by tiny diamonds."},
-    "ring_diamond":  {"name": "Diamond Ring",       "price":  75_000, "type": "ring", "desc": "Brilliant-cut diamond on a platinum band."},
-    "ring_eternity": {"name": "Eternity Ring",      "price": 150_000, "type": "ring", "desc": "An unbroken circle of diamonds — forever."},
-    "ring_celest":   {"name": "Celestial Halo",     "price": 500_000, "type": "ring", "desc": "A starlight-cut gem that glows faintly. Mythic."},
-    # trinkets
-    "rose":          {"name": "Single Rose",        "price":     100, "type": "gift",  "desc": "A fresh red rose. Simple gesture, big meaning."},
-    "chocolates":    {"name": "Box of Chocolates",  "price":     250, "type": "gift",  "desc": "Twelve handmade chocolates in a glossy box."},
-    "teddy":         {"name": "Plush Teddy Bear",   "price":     400, "type": "gift",  "desc": "A huggable bear wearing a tiny bow tie."},
-    "crown":         {"name": "Tiny Crown",         "price":  10_000, "type": "trophy","desc": "A miniature crown. You're royalty now."},
-    "yacht":         {"name": "Toy Yacht",          "price":  50_000, "type": "trophy","desc": "Pocket-sized yacht. You can dream."},
+    "ring_copper":   {"name": "Copper Band",        "price":     500, "type": "ring",   "desc": "A simple copper band — humble but heartfelt."},
+    "ring_silver":   {"name": "Silver Loop",        "price":   1_500, "type": "ring",   "desc": "A polished silver loop with a soft shine."},
+    "ring_gold":     {"name": "Gold Ring",          "price":   4_000, "type": "ring",   "desc": "Classic gold. Timeless. Heavy in the hand."},
+    "ring_rose":     {"name": "Rose-Gold Ring",     "price":   8_000, "type": "ring",   "desc": "Warm pink-gold band. Elegant, vintage vibes."},
+    "ring_sapphire": {"name": "Sapphire Ring",      "price":  16_000, "type": "ring",   "desc": "Deep blue sapphire set in white gold."},
+    "ring_emerald":  {"name": "Emerald Ring",       "price":  32_000, "type": "ring",   "desc": "Vivid emerald flanked by tiny diamonds."},
+    "ring_diamond":  {"name": "Diamond Ring",       "price":  75_000, "type": "ring",   "desc": "Brilliant-cut diamond on a platinum band."},
+    "ring_eternity": {"name": "Eternity Ring",      "price": 150_000, "type": "ring",   "desc": "An unbroken circle of diamonds — forever."},
+    "ring_celest":   {"name": "Celestial Halo",     "price": 500_000, "type": "ring",   "desc": "A starlight-cut gem that glows faintly. Mythic."},
+    "rose":          {"name": "Single Rose",        "price":     100, "type": "gift",   "desc": "A fresh red rose. Simple gesture, big meaning."},
+    "chocolates":    {"name": "Box of Chocolates",  "price":     250, "type": "gift",   "desc": "Twelve handmade chocolates in a glossy box."},
+    "teddy":         {"name": "Plush Teddy Bear",   "price":     400, "type": "gift",   "desc": "A huggable bear wearing a tiny bow tie."},
+    "crown":         {"name": "Tiny Crown",         "price":  10_000, "type": "trophy", "desc": "A miniature crown. You're royalty now."},
+    "yacht":         {"name": "Toy Yacht",          "price":  50_000, "type": "trophy", "desc": "Pocket-sized yacht. You can dream."},
 }
+
+# ---------------------------------------------------------------------------
+# Sellable items (from fishing / crates)
+# Sell price is what the player receives when they run !sell
+# ---------------------------------------------------------------------------
+SELLABLE_ITEMS: dict[str, dict] = {
+    "old_boot":      {"name": "Old Boot",        "sell": 0,     "rarity": "common",    "desc": "Just a waterlogged boot. Worthless."},
+    "seaweed":       {"name": "Pile of Seaweed", "sell": 5,     "rarity": "common",    "desc": "Slippery and pungent."},
+    "pebble":        {"name": "Smooth Pebble",   "sell": 10,    "rarity": "common",    "desc": "A nicely rounded pebble."},
+    "sea_glass":     {"name": "Sea Glass",       "sell": 40,    "rarity": "uncommon",  "desc": "Frosted glass polished by the sea."},
+    "coral_piece":   {"name": "Coral Piece",     "sell": 80,    "rarity": "uncommon",  "desc": "A fragment of branching coral."},
+    "barnacle_ring": {"name": "Barnacle Ring",   "sell": 90,    "rarity": "uncommon",  "desc": "A ring encrusted with barnacles."},
+    "drift_bottle":  {"name": "Drift Bottle",    "sell": 150,   "rarity": "rare",      "desc": "A sealed bottle that washed ashore."},
+    "fish_trophy":   {"name": "Fish Trophy",     "sell": 200,   "rarity": "rare",      "desc": "A small trophy shaped like a fish."},
+    "pearl":         {"name": "Pearl",           "sell": 300,   "rarity": "rare",      "desc": "A lustrous pearl from a lucky oyster."},
+    "ancient_coin":  {"name": "Ancient Coin",    "sell": 500,   "rarity": "epic",      "desc": "A coin worn smooth by centuries underwater."},
+    "torn_map":      {"name": "Torn Map",        "sell": 250,   "rarity": "epic",      "desc": "Half a treasure map. Still counts."},
+    "golden_fish":   {"name": "Golden Fish",     "sell": 1_000, "rarity": "legendary", "desc": "A fish that gleams like solid gold."},
+}
+
+_RARITY_WEIGHTS = {
+    "common": 50, "uncommon": 30, "rare": 15, "epic": 4, "legendary": 1,
+}
+
+# Crate loot pool with weighted chances of each item or empty.
+_CRATE_POOL: list[tuple[str | None, int]] = (
+    [(None, 20)]  # 20% chance of nothing
+    + [(iid, _RARITY_WEIGHTS[v["rarity"]]) for iid, v in SELLABLE_ITEMS.items()]
+)
+
+_CRATE_KEYS = [x[0] for x in _CRATE_POOL]
+_CRATE_WEIGHTS = [x[1] for x in _CRATE_POOL]
 
 
 def _ring_ids() -> List[str]:
@@ -55,7 +72,7 @@ def _ring_ids() -> List[str]:
 
 
 def _item_pretty(item_id: str) -> str:
-    item = SHOP_ITEMS.get(item_id)
+    item = SHOP_ITEMS.get(item_id) or SELLABLE_ITEMS.get(item_id)
     return item["name"] if item else item_id
 
 
@@ -66,15 +83,15 @@ class Economy(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    # ---------------- pay / gift coins ----------------
+    # ---------------- pay ----------------
     @commands.hybrid_command(name="pay", description="Send coins to another member.")
     @app_commands.describe(member="Who you're paying.", amount="How many coins (or 'all').")
     async def pay(self, ctx: commands.Context, member: discord.Member, amount: str):
         if member.bot:
-            await ctx.send(embed=embeds.warn("Nope", "You can't pay a bot."))
+            await v2.send(ctx, v2.warn("Not Allowed", "You cannot pay a bot."))
             return
         if member.id == ctx.author.id:
-            await ctx.send(embed=embeds.warn("Nope", "You can't pay yourself."))
+            await v2.send(ctx, v2.warn("Not Allowed", "You cannot pay yourself."))
             return
 
         d = _load()
@@ -89,25 +106,91 @@ class Economy(commands.Cog):
             try:
                 value = int(amt_l)
             except ValueError:
-                await ctx.send(embed=embeds.danger("Bad amount", "Amount must be a number or `all`."))
+                await v2.send(ctx, v2.danger("Bad Amount", "Amount must be a number or `all`."))
                 return
 
         if value <= 0:
-            await ctx.send(embed=embeds.danger("Bad amount", "Amount must be positive."))
+            await v2.send(ctx, v2.danger("Bad Amount", "Amount must be positive."))
             return
         if value > bal:
-            await ctx.send(embed=embeds.danger("Not enough coins", f"You only have **{bal}**."))
+            await v2.send(ctx, v2.danger("Not Enough Coins", f"You only have **{bal:,}** coins."))
             return
 
         sender["coins"] = bal - value
         recv["coins"] = recv.get("coins", 0) + value
         _save(d)
 
-        await ctx.send(embed=embeds.success(
-            "Payment sent",
-            f"{ctx.author.mention} sent **{value}** coins to {member.mention}.\n"
-            f"Your balance: **{sender['coins']}** · their balance: **{recv['coins']}**.",
+        await v2.send(ctx, v2.success(
+            "Payment Sent",
+            f"{ctx.author.mention} sent **{value:,}** coins to {member.mention}.",
+            fields=[
+                ("Your Balance", f"{sender['coins']:,} coins"),
+                ("Their Balance", f"{recv['coins']:,} coins"),
+            ],
         ))
+
+    # ---------------- rob ----------------
+    @commands.hybrid_command(name="rob", description="Attempt to rob another member.")
+    @app_commands.describe(member="Who you're trying to rob.")
+    async def rob(self, ctx: commands.Context, member: discord.Member):
+        if member.bot or member.id == ctx.author.id:
+            await v2.send(ctx, v2.warn("Not Allowed", "Pick a real person to rob, not yourself or a bot."))
+            return
+
+        d = _load()
+        robber = _profile(d, ctx.author.id)
+        target = _profile(d, member.id)
+        now = time.time()
+
+        # Check caught cooldown (5 minutes)
+        caught_until = robber.get("rob_caught_until", 0)
+        if now < caught_until:
+            remaining = int(caught_until - now)
+            await v2.send(ctx, v2.danger(
+                "Laying Low",
+                f"You were caught recently and need to keep a low profile.\n"
+                f"You can attempt another robbery in **{remaining // 60}m {remaining % 60}s**.",
+            ))
+            return
+
+        target_coins = target.get("coins", 0)
+        if target_coins < 100:
+            await v2.send(ctx, v2.warn(
+                "Not Worth It",
+                f"{member.display_name} doesn't have enough coins to be worth robbing (minimum 100).",
+            ))
+            return
+
+        # 35% success rate
+        if random.random() < 0.35:
+            # Success — steal 10–25% of their coins
+            stolen = max(10, int(target_coins * random.uniform(0.10, 0.25)))
+            stolen = min(stolen, target_coins)
+            robber["coins"] = robber.get("coins", 0) + stolen
+            target["coins"] = target_coins - stolen
+            _grant_xp(robber, 10)
+            _save(d)
+            await v2.send(ctx, v2.success(
+                "Heist Successful",
+                f"You slipped away with **{stolen:,}** coins from {member.mention}!\n"
+                f"New balance: **{robber['coins']:,}** coins.",
+                thumbnail_url=member.display_avatar.url,
+            ))
+        else:
+            # Caught — lose 5–15% of robber's coins, 5-min cooldown
+            robber_coins = robber.get("coins", 0)
+            fine = max(10, int(robber_coins * random.uniform(0.05, 0.15)))
+            fine = min(fine, robber_coins)
+            robber["coins"] = robber_coins - fine
+            robber["rob_caught_until"] = now + 5 * 60  # 5 minutes
+            _save(d)
+            await v2.send(ctx, v2.danger(
+                "Caught Red-Handed",
+                f"{member.display_name} caught you in the act!\n"
+                f"You were fined **{fine:,}** coins and must wait **5 minutes** before trying again.\n"
+                f"New balance: **{robber['coins']:,}** coins.",
+                thumbnail_url=ctx.author.display_avatar.url,
+            ))
 
     # ---------------- shop ----------------
     @commands.hybrid_command(name="shop", description="Browse what you can buy with coins.")
@@ -115,42 +198,41 @@ class Economy(commands.Cog):
         rings = [(i, SHOP_ITEMS[i]) for i in _ring_ids()]
         gifts = [(i, v) for i, v in SHOP_ITEMS.items() if v["type"] in ("gift", "trophy")]
 
-        e = embeds.info(
+        ring_lines = "\n".join(
+            f"`{i}` · **{v['name']}** — {v['price']:,}c\n*{v['desc']}*"
+            for i, v in rings
+        )
+        gift_lines = "\n".join(
+            f"`{i}` · **{v['name']}** — {v['price']:,}c\n*{v['desc']}*"
+            for i, v in gifts
+        )
+
+        container = v2.build(
+            "info",
             f"{settings.emoji.spark}  York's Shop",
-            "Buy with `!buy <id>`. Rings let you propose with `!marry @user`.",
+            "Use `!buy <id>` to purchase. Rings allow you to propose with `!marry`.",
+            extra_sections=[
+                (f"**Rings**\n{ring_lines}", None),
+                (f"**Gifts & Trinkets**\n{gift_lines}", None),
+            ],
+            footer=f"{settings.bot_name} · built by {settings.creator}",
         )
-        e.add_field(
-            name="Rings",
-            value="\n".join(
-                f"`{i}` · **{v['name']}** — {v['price']:,} coins\n*{v['desc']}*"
-                for i, v in rings
-            ),
-            inline=False,
-        )
-        e.add_field(
-            name="Gifts & Trinkets",
-            value="\n".join(
-                f"`{i}` · **{v['name']}** — {v['price']:,} coins\n*{v['desc']}*"
-                for i, v in gifts
-            ),
-            inline=False,
-        )
-        await ctx.send(embed=e)
+        await v2.send(ctx, container)
 
     @commands.hybrid_command(name="buy", description="Buy something from the shop by id.")
     @app_commands.describe(item_id="The shop item id (see /shop).")
     async def buy(self, ctx: commands.Context, item_id: str):
         item = SHOP_ITEMS.get(item_id.lower())
         if not item:
-            await ctx.send(embed=embeds.danger("Unknown item", "Use `!shop` to see valid ids."))
+            await v2.send(ctx, v2.danger("Unknown Item", "Use `!shop` to see valid item ids."))
             return
 
         d = _load(); p = _profile(d, ctx.author.id)
         bal = p.get("coins", 0)
         if bal < item["price"]:
-            await ctx.send(embed=embeds.danger(
-                "Not enough coins",
-                f"**{item['name']}** costs **{item['price']:,}** coins. You have **{bal}**.",
+            await v2.send(ctx, v2.danger(
+                "Not Enough Coins",
+                f"**{item['name']}** costs **{item['price']:,}** coins.\nYou have **{bal:,}** coins.",
             ))
             return
 
@@ -159,10 +241,71 @@ class Economy(commands.Cog):
         inv.append(item_id.lower())
         _save(d)
 
-        await ctx.send(embed=embeds.success(
-            f"Purchased {item['name']}",
-            f"You spent **{item['price']:,}** coins. New balance: **{p['coins']}**.\n"
-            f"Item added to your inventory.",
+        await v2.send(ctx, v2.success(
+            f"Purchased — {item['name']}",
+            f"You spent **{item['price']:,}** coins.\nNew balance: **{p['coins']:,}** coins.",
+        ))
+
+    # ---------------- sell ----------------
+    @commands.hybrid_command(name="sell", description="Sell an item from your inventory for coins.")
+    @app_commands.describe(item_id="Item id to sell (e.g. pearl). Use 'all' to sell everything sellable.", quantity="How many to sell (default 1).")
+    async def sell(self, ctx: commands.Context, item_id: str, quantity: int = 1):
+        d = _load(); p = _profile(d, ctx.author.id)
+        inv: list[str] = p.get("inventory", [])
+
+        if item_id.lower() == "all":
+            # Sell all sellable items
+            sold_count = 0
+            total_earned = 0
+            new_inv = []
+            for iid in inv:
+                sellable = SELLABLE_ITEMS.get(iid)
+                if sellable and sellable["sell"] > 0:
+                    total_earned += sellable["sell"]
+                    sold_count += 1
+                else:
+                    new_inv.append(iid)
+            p["inventory"] = new_inv
+            p["coins"] = p.get("coins", 0) + total_earned
+            _save(d)
+            if sold_count == 0:
+                await v2.send(ctx, v2.warn("Nothing to Sell", "You have no sellable items in your inventory."))
+            else:
+                await v2.send(ctx, v2.success(
+                    "Items Sold",
+                    f"Sold **{sold_count}** item{'s' if sold_count != 1 else ''} for **{total_earned:,}** coins.\n"
+                    f"New balance: **{p['coins']:,}** coins.",
+                ))
+            return
+
+        iid = item_id.lower()
+        sellable = SELLABLE_ITEMS.get(iid)
+        if not sellable:
+            await v2.send(ctx, v2.danger("Not Sellable", f"`{iid}` is not a sellable item. Check your `!inventory`."))
+            return
+        if sellable["sell"] == 0:
+            await v2.send(ctx, v2.warn("Worth Nothing", f"**{sellable['name']}** has no sale value — it's just junk."))
+            return
+
+        quantity = max(1, quantity)
+        available = inv.count(iid)
+        if available < quantity:
+            await v2.send(ctx, v2.danger(
+                "Not Enough",
+                f"You only have **{available}** × {sellable['name']} in your inventory.",
+            ))
+            return
+
+        total = sellable["sell"] * quantity
+        for _ in range(quantity):
+            inv.remove(iid)
+        p["coins"] = p.get("coins", 0) + total
+        _save(d)
+
+        await v2.send(ctx, v2.success(
+            "Sold",
+            f"Sold **{quantity}** × {sellable['name']} for **{total:,}** coins.\n"
+            f"New balance: **{p['coins']:,}** coins.",
         ))
 
     # ---------------- inventory ----------------
@@ -174,30 +317,44 @@ class Economy(commands.Cog):
         inv: list[str] = p.get("inventory", [])
 
         if not inv:
-            await ctx.send(embed=embeds.info(f"{m.display_name}'s inventory", "Empty. Try `!shop` to buy something."))
+            await v2.send(ctx, v2.info(
+                f"{m.display_name}'s Inventory",
+                "Empty. Try `!shop` to buy something or `!fish` to find items.",
+                thumbnail_url=m.display_avatar.url,
+            ))
             return
 
-        # Group by item id with counts.
         counts: dict[str, int] = {}
         for x in inv:
             counts[x] = counts.get(x, 0) + 1
 
         lines = []
-        for iid, n in counts.items():
-            item = SHOP_ITEMS.get(iid)
-            label = item["name"] if item else iid
-            lines.append(f"• **{label}** ×{n}" if n > 1 else f"• **{label}**")
+        for iid, n in sorted(counts.items()):
+            item = SHOP_ITEMS.get(iid) or SELLABLE_ITEMS.get(iid)
+            if item:
+                label = item["name"]
+                sell_note = f" *(sell: {item['sell']}c)*" if iid in SELLABLE_ITEMS and item.get("sell", 0) > 0 else ""
+            else:
+                label = iid
+                sell_note = ""
+            qty = f" ×{n}" if n > 1 else ""
+            lines.append(f"• **{label}**{qty}{sell_note}")
 
-        e = embeds.info(f"{m.display_name}'s inventory", "\n".join(lines))
-        e.set_thumbnail(url=m.display_avatar.url)
-        await ctx.send(embed=e)
+        container = v2.build(
+            "info",
+            f"{m.display_name}'s Inventory",
+            f"{len(inv)} item{'s' if len(inv) != 1 else ''} total.",
+            extra_sections=[("\n".join(lines), None)],
+            thumbnail_url=m.display_avatar.url,
+        )
+        await v2.send(ctx, container)
 
     # ---------------- marriage ----------------
-    @commands.hybrid_command(name="marry", description="Propose to someone (requires a ring in your inventory).")
+    @commands.hybrid_command(name="marry", description="Propose to someone (requires a ring).")
     @app_commands.describe(member="Who you're proposing to.")
     async def marry(self, ctx: commands.Context, member: discord.Member):
         if member.bot or member.id == ctx.author.id:
-            await ctx.send(embed=embeds.warn("Nope", "Pick a real person, not yourself or a bot."))
+            await v2.send(ctx, v2.warn("Not Allowed", "Pick a real person — not yourself or a bot."))
             return
 
         d = _load()
@@ -205,92 +362,76 @@ class Economy(commands.Cog):
         target = _profile(d, member.id)
 
         if proposer.get("married_to"):
-            await ctx.send(embed=embeds.warn("You're already married", "Use `!divorce` first if you want to move on."))
+            await v2.send(ctx, v2.warn("Already Married", "Use `!divorce` first if you want to move on."))
             return
         if target.get("married_to"):
-            await ctx.send(embed=embeds.warn("They're taken", f"{member.display_name} is already married to someone."))
+            await v2.send(ctx, v2.warn("They're Taken", f"{member.display_name} is already married to someone."))
             return
 
-        # Find best ring in their inventory.
         inv: list[str] = proposer.get("inventory", [])
         owned_rings = [i for i in inv if SHOP_ITEMS.get(i, {}).get("type") == "ring"]
         if not owned_rings:
-            await ctx.send(embed=embeds.danger(
-                "You need a ring",
-                "Buy one from `!shop` first — even a Copper Band counts.",
-            ))
+            await v2.send(ctx, v2.danger("No Ring", "You need a ring from `!shop` to propose — even a Copper Band counts."))
             return
-        # Use the most expensive ring they own.
+
         ring_id = max(owned_rings, key=lambda i: SHOP_ITEMS[i]["price"])
         ring = SHOP_ITEMS[ring_id]
 
-        # Ask the target to accept.
         view = _ProposalView(proposer_id=ctx.author.id, target_id=member.id)
-        e = embeds.info(
-            f"{settings.emoji.spark}  A proposal!",
-            f"{ctx.author.mention} offers {member.mention} a **{ring['name']}** "
-            f"and asks for their hand in marriage.\n\n"
+        container = v2.build(
+            "info",
+            f"{settings.emoji.spark}  A Proposal!",
+            f"{ctx.author.mention} offers {member.mention} a **{ring['name']}** and asks for their hand in marriage.\n\n"
             f"*{ring['desc']}*\n\n"
-            f"{member.mention}, do you accept? (60s to decide)",
+            f"{member.mention}, do you accept? *(60 seconds to decide)*",
+            footer=f"{settings.bot_name} · built by {settings.creator}",
         )
-        msg = await ctx.send(content=member.mention, embed=e, view=view)
+        msg = await v2.send(ctx, container, view=view)
 
         await view.wait()
         if view.result is None:
-            await msg.edit(embed=embeds.warn("Proposal expired", f"{member.display_name} didn't answer in time."), view=None)
+            await v2.edit(msg, v2.warn("Proposal Expired", f"{member.display_name} did not answer in time."))
             return
         if view.result is False:
-            await msg.edit(embed=embeds.danger("Declined", f"{member.display_name} said no. Awkward."), view=None)
+            await v2.edit(msg, v2.danger("Proposal Declined", f"{member.display_name} said no."))
             return
 
-        # Accepted — re-load (other commands may have run during the wait).
         d2 = _load()
         p2 = _profile(d2, ctx.author.id)
         t2 = _profile(d2, member.id)
         if p2.get("married_to") or t2.get("married_to"):
-            await msg.edit(embed=embeds.warn("Too late", "One of you got married in the meantime."), view=None)
+            await v2.edit(msg, v2.warn("Too Late", "One of you got married in the meantime."))
             return
 
-        # Consume the ring from inventory.
         inv2: list[str] = p2.get("inventory", [])
         if ring_id in inv2:
             inv2.remove(ring_id)
 
         now = time.time()
-        p2["married_to"] = member.id
-        p2["married_at"] = now
-        p2["ring"] = ring_id
-        t2["married_to"] = ctx.author.id
-        t2["married_at"] = now
-        t2["ring"] = ring_id
+        p2["married_to"] = member.id; p2["married_at"] = now; p2["ring"] = ring_id
+        t2["married_to"] = ctx.author.id; t2["married_at"] = now; t2["ring"] = ring_id
         _save(d2)
 
-        await msg.edit(
-            embed=embeds.success(
-                "Married!",
-                f"{ctx.author.mention} and {member.mention} are now married with a **{ring['name']}**. "
-                f"Congratulations!",
-            ),
-            view=None,
-        )
+        await v2.edit(msg, v2.success(
+            "Married! 💍",
+            f"{ctx.author.mention} and {member.mention} are now married with a **{ring['name']}**.\n"
+            f"Congratulations to the happy couple!",
+        ))
 
     @commands.hybrid_command(name="divorce", description="End your marriage.")
     async def divorce(self, ctx: commands.Context):
         d = _load(); p = _profile(d, ctx.author.id)
         spouse_id = p.get("married_to")
         if not spouse_id:
-            await ctx.send(embed=embeds.warn("You're not married", "Nothing to end."))
+            await v2.send(ctx, v2.warn("Not Married", "You are not currently married."))
             return
         s = _profile(d, int(spouse_id))
         for prof in (p, s):
-            prof["married_to"] = None
-            prof["ring"] = None
-            prof["married_at"] = 0
+            prof["married_to"] = None; prof["ring"] = None; prof["married_at"] = 0
         _save(d)
-
         spouse = ctx.guild.get_member(int(spouse_id)) if ctx.guild else None
         spouse_name = spouse.mention if spouse else f"<@{spouse_id}>"
-        await ctx.send(embed=embeds.info("Divorced", f"{ctx.author.mention} and {spouse_name} are no longer married."))
+        await v2.send(ctx, v2.info("Divorced", f"{ctx.author.mention} and {spouse_name} are no longer married."))
 
     @commands.hybrid_command(name="marriage", description="See who you (or someone) are married to.")
     @app_commands.describe(member="(Optional) check someone else's marriage.")
@@ -299,10 +440,8 @@ class Economy(commands.Cog):
         d = _load(); p = _profile(d, m.id); _save(d)
         spouse_id = p.get("married_to")
         if not spouse_id:
-            await ctx.send(embed=embeds.info(
-                f"{m.display_name}'s marriage",
-                "Single. Open to offers." if m.id == ctx.author.id else "Single.",
-            ))
+            msg = "Single — open to offers." if m.id == ctx.author.id else "Single."
+            await v2.send(ctx, v2.info(f"{m.display_name}'s Marriage", msg, thumbnail_url=m.display_avatar.url))
             return
 
         spouse = ctx.guild.get_member(int(spouse_id)) if ctx.guild else None
@@ -312,17 +451,19 @@ class Economy(commands.Cog):
         since = p.get("married_at", 0)
         days = int((time.time() - since) / 86400) if since else 0
 
-        e = embeds.info(
-            f"{m.display_name}'s marriage",
-            f"Married to **{spouse_name}** with a **{ring_name}**.\n"
-            f"Together for **{days}** day{'s' if days != 1 else ''}.",
-        )
-        if spouse:
-            e.set_thumbnail(url=spouse.display_avatar.url)
-        await ctx.send(embed=e)
+        await v2.send(ctx, v2.build(
+            "info",
+            f"💍  {m.display_name}'s Marriage",
+            f"Married to **{spouse_name}**.",
+            fields=[
+                ("Ring", ring_name),
+                ("Together For", f"{days} day{'s' if days != 1 else ''}"),
+            ],
+            thumbnail_url=(spouse.display_avatar.url if spouse else m.display_avatar.url),
+        ))
 
     # ---------------- blackjack ----------------
-    @commands.hybrid_command(name="blackjack", description="Play a hand of blackjack against York. Bet coins.")
+    @commands.hybrid_command(name="blackjack", description="Play blackjack against York. Bet coins.")
     @app_commands.describe(bet="Coins to wager (or 'all').")
     async def blackjack(self, ctx: commands.Context, bet: str):
         d = _load(); p = _profile(d, ctx.author.id)
@@ -335,32 +476,28 @@ class Economy(commands.Cog):
             try:
                 amount = int(bet_l)
             except ValueError:
-                await ctx.send(embed=embeds.danger("Bad bet", "Bet must be a number or `all`."))
+                await v2.send(ctx, v2.danger("Bad Bet", "Bet must be a number or `all`."))
                 return
 
         if amount <= 0:
-            await ctx.send(embed=embeds.danger("Bad bet", "Bet must be positive."))
+            await v2.send(ctx, v2.danger("Bad Bet", "Bet must be positive."))
             return
         if amount > bal:
-            await ctx.send(embed=embeds.danger("Not enough coins", f"You only have **{bal}**."))
+            await v2.send(ctx, v2.danger("Not Enough Coins", f"You only have **{bal:,}** coins."))
             return
 
-        # Lock the bet up-front. View settles winnings/refund at the end.
-        p["coins"] = bal - amount
-        _save(d)
+        p["coins"] = bal - amount; _save(d)
 
         view = _BlackjackView(player=ctx.author, bet=amount)
-        e = view.render(opening=True)
-        msg = await ctx.send(embed=e, view=view)
+        container = view.render(opening=True)
+        msg = await v2.send(ctx, container, view=view)
         view.message = msg
 
 
 # ===========================================================================
-# Discord UI helpers
+# UI helpers
 # ===========================================================================
 class _ProposalView(discord.ui.View):
-    """Yes/No buttons shown to the proposal target."""
-
     def __init__(self, proposer_id: int, target_id: int):
         super().__init__(timeout=60)
         self.proposer_id = proposer_id
@@ -369,9 +506,7 @@ class _ProposalView(discord.ui.View):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.target_id:
-            await interaction.response.send_message(
-                "This proposal isn't for you.", ephemeral=True,
-            )
+            await interaction.response.send_message("This proposal is not for you.", ephemeral=True)
             return False
         return True
 
@@ -400,21 +535,17 @@ def _new_deck() -> list[str]:
 
 
 def _hand_value(hand: list[str]) -> int:
-    """Best blackjack value of a hand (aces 1 or 11)."""
-    total = 0
-    aces = 0
+    total = 0; aces = 0
     for card in hand:
         rank = card[:-1]
         if rank == "A":
-            total += 11
-            aces += 1
+            total += 11; aces += 1
         elif rank in ("J", "Q", "K"):
             total += 10
         else:
             total += int(rank)
     while total > 21 and aces:
-        total -= 10
-        aces -= 1
+        total -= 10; aces -= 1
     return total
 
 
@@ -438,26 +569,22 @@ class _BlackjackView(discord.ui.View):
         self.dealer_hand = [self.deck.pop(), self.deck.pop()]
         self.finished = False
         self.message: Optional[discord.Message] = None
-        # Disable double-down once the player has hit at least once.
         self._can_double = True
-        # Outcome state (set when the hand resolves).
-        self.outcome: Optional[str] = None  # "win" | "lose" | "push" | "blackjack" | "bust"
-        self.delta: int = 0  # net coins won (+) or lost (-)
+        self.outcome: Optional[str] = None
+        self.delta: int = 0
         self.balance_after: int = 0
 
-    # ---- view utilities ----
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.player.id:
-            await interaction.response.send_message("This isn't your hand.", ephemeral=True)
+            await interaction.response.send_message("This is not your hand.", ephemeral=True)
             return False
         return True
 
     async def on_timeout(self) -> None:
         if not self.finished:
-            # Treat as stand on timeout.
             await self._dealer_play_and_finish(reason="Timed out — auto-stand.")
 
-    def render(self, opening: bool = False) -> discord.Embed:
+    def render(self, opening: bool = False) -> discord.ui.Container:
         pv = _hand_value(self.player_hand)
         if self.finished:
             dv = _hand_value(self.dealer_hand)
@@ -465,59 +592,41 @@ class _BlackjackView(discord.ui.View):
         else:
             dealer_line = f"{_hand_str(self.dealer_hand, hide_first=True)}  → **?**"
 
-        # Pick title, color, and the big result banner based on outcome.
         if not self.finished:
-            title = "Blackjack — natural 21!" if (opening and _is_blackjack(self.player_hand)) else "Blackjack"
-            builder = embeds.info
+            style = "info"
+            if opening and _is_blackjack(self.player_hand):
+                title = "Blackjack — Natural 21!"
+            else:
+                title = "Blackjack"
             banner = ""
         else:
             banner_map = {
-                "blackjack": (
-                    f"{settings.emoji.ok}  YOU WIN — Blackjack!",
-                    embeds.success,
-                    f"💰 **+{self.delta} coins** (3:2 payout)",
-                ),
-                "win": (
-                    f"{settings.emoji.ok}  YOU WIN!",
-                    embeds.success,
-                    f"💰 **+{self.delta} coins**",
-                ),
-                "push": (
-                    f"{settings.emoji.info}  PUSH — tie",
-                    embeds.info,
-                    f"↔️ Bet of **{self.bet}** returned. No change.",
-                ),
-                "bust": (
-                    f"{settings.emoji.error}  YOU LOSE — Bust!",
-                    embeds.danger,
-                    f"💸 **−{abs(self.delta)} coins**",
-                ),
-                "lose": (
-                    f"{settings.emoji.error}  YOU LOSE",
-                    embeds.danger,
-                    f"💸 **−{abs(self.delta)} coins**",
-                ),
+                "blackjack": ("success", "YOU WIN — Blackjack! 🎉", f"💰 **+{self.delta:,} coins** (3:2 payout)"),
+                "win":       ("success", "YOU WIN! 🎉",            f"💰 **+{self.delta:,} coins**"),
+                "push":      ("info",    "PUSH — Tie",             f"↔️ Bet of **{self.bet:,}** returned. No change."),
+                "bust":      ("danger",  "YOU LOSE — Bust! 💸",    f"**−{abs(self.delta):,} coins**"),
+                "lose":      ("danger",  "YOU LOSE 💸",            f"**−{abs(self.delta):,} coins**"),
             }
-            title, builder, banner = banner_map.get(
-                self.outcome or "lose", banner_map["lose"]
-            )
+            style, title, banner = banner_map.get(self.outcome or "lose", banner_map["lose"])
 
-        body = (
-            (f"**{banner}**\n\n" if banner else "")
-            + f"**Bet:** {self.bet} coins\n\n"
-            + f"**{self.player.display_name}**\n{_hand_str(self.player_hand)}  → **{pv}**\n\n"
-            + f"**Dealer**\n{dealer_line}"
+        body = (f"**{banner}**\n\n" if banner else "") + f"Bet: **{self.bet:,}** coins"
+        footer = (
+            f"Balance: {self.balance_after:,} coins · {settings.bot_name} · built by {settings.creator}"
+            if self.finished else
+            f"{settings.bot_name} · built by {settings.creator}"
         )
 
-        e = builder(title, body)
-        if self.finished:
-            e.set_footer(
-                text=f"Balance: {self.balance_after} coins · "
-                     f"York · built by {settings.creator}"
-            )
-        return e
+        return v2.build(
+            style,
+            f"{settings.emoji.spark}  {title}",
+            body,
+            extra_sections=[
+                (f"**{self.player.display_name}**\n{_hand_str(self.player_hand)}  → **{pv}**\n\n"
+                 f"**Dealer**\n{dealer_line}", None),
+            ],
+            footer=footer,
+        )
 
-    # ---- buttons ----
     @discord.ui.button(label="Hit", style=discord.ButtonStyle.primary, emoji="➕")
     async def hit_btn(self, interaction: discord.Interaction, _: discord.ui.Button):
         self._can_double = False
@@ -526,7 +635,11 @@ class _BlackjackView(discord.ui.View):
             await interaction.response.defer()
             await self._dealer_play_and_finish()
             return
-        await interaction.response.edit_message(embed=self.render(), view=self)
+        await interaction.response.edit_message(
+            components=[self.render()],
+            flags=discord.MessageFlags(is_components_v2=True),
+            view=self,
+        )
 
     @discord.ui.button(label="Stand", style=discord.ButtonStyle.secondary, emoji="✋")
     async def stand_btn(self, interaction: discord.Interaction, _: discord.ui.Button):
@@ -538,76 +651,55 @@ class _BlackjackView(discord.ui.View):
         if not self._can_double:
             await interaction.response.send_message("You can only double on your opening hand.", ephemeral=True)
             return
-        # Need enough coins to cover the doubled portion.
         d = _load(); p = _profile(d, self.player.id)
         if p.get("coins", 0) < self.bet:
             await interaction.response.send_message(
-                f"Not enough coins to double — you need another **{self.bet}**.",
-                ephemeral=True,
+                f"Not enough coins to double — you need another **{self.bet:,}**.", ephemeral=True,
             )
             return
-        p["coins"] -= self.bet
-        _save(d)
+        p["coins"] -= self.bet; _save(d)
         self.bet *= 2
         self.player_hand.append(self.deck.pop())
         await interaction.response.defer()
         await self._dealer_play_and_finish()
 
-    # ---- resolution ----
     async def _dealer_play_and_finish(self, reason: str | None = None) -> None:
         if self.finished:
             return
-        # Dealer reveals & plays — hits until 17+.
-        while _hand_value(self.dealer_hand) < 17:
-            self.dealer_hand.append(self.deck.pop())
-            await asyncio.sleep(0)  # yield in case Discord is slow
+        self.finished = True
+        for btn in self.children:
+            if isinstance(btn, discord.ui.Button):
+                btn.disabled = True
 
         pv = _hand_value(self.player_hand)
-        dv = _hand_value(self.dealer_hand)
-        player_bj = _is_blackjack(self.player_hand)
-        dealer_bj = _is_blackjack(self.dealer_hand)
-
-        # Determine outcome and payout. `bet` was already deducted at start.
-        d = _load(); p = _profile(d, self.player.id)
-        payout = 0   # coins to credit back to the player (includes original bet).
-        outcome = "lose"
-
         if pv > 21:
-            outcome = "bust"
-        elif player_bj and not dealer_bj:
-            outcome = "blackjack"
-            payout = int(self.bet * 2.5)
-        elif dv > 21 or pv > dv:
-            outcome = "win"
-            payout = self.bet * 2
-        elif pv < dv:
-            outcome = "lose"
+            self.outcome = "bust"
+            self.delta = -self.bet
         else:
-            outcome = "push"
-            payout = self.bet  # refund
+            while _hand_value(self.dealer_hand) < 17:
+                self.dealer_hand.append(self.deck.pop())
+            dv = _hand_value(self.dealer_hand)
+            if _is_blackjack(self.player_hand) and not _is_blackjack(self.dealer_hand):
+                self.outcome = "blackjack"
+                self.delta = int(self.bet * 1.5)
+            elif dv > 21 or pv > dv:
+                self.outcome = "win"
+                self.delta = self.bet
+            elif pv == dv:
+                self.outcome = "push"
+                self.delta = 0
+            else:
+                self.outcome = "lose"
+                self.delta = -self.bet
 
-        if payout:
-            p["coins"] = p.get("coins", 0) + payout
-        _grant_xp(p, 6 if payout > self.bet else 2)
+        d = _load(); p = _profile(d, self.player.id)
+        p["coins"] = p.get("coins", 0) + self.bet + self.delta
+        _grant_xp(p, 5 if self.delta >= 0 else 2)
         _save(d)
-
-        self.outcome = outcome
-        self.delta = payout - self.bet  # net change vs. starting balance
         self.balance_after = p["coins"]
-        self.finished = True
-        for child in self.children:
-            child.disabled = True
 
-        e = self.render()
-        if reason:
-            # Append the timeout note to whatever footer render() set.
-            existing = e.footer.text or ""
-            e.set_footer(text=f"{reason} · {existing}")
         if self.message:
-            try:
-                await self.message.edit(embed=e, view=self)
-            except discord.HTTPException:
-                pass
+            await v2.edit(self.message, self.render(), view=self)
         self.stop()
 
 

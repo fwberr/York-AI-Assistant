@@ -1,4 +1,4 @@
-"""Conversation cog — wake word, attachment, AI replies, learning."""
+"""Conversation cog — wake word, attachment, AI replies."""
 from __future__ import annotations
 
 import asyncio
@@ -16,17 +16,19 @@ from .fun import fetch_gif, fetch_image, GIF_CATEGORIES
 
 log = logging.getLogger("york.conversation")
 
+# Regex to detect @everyone and @here that the AI might slip in.
+_MASS_PING = re.compile(r"@(?:everyone|here)", re.IGNORECASE)
+
 
 def _matches_any(text: str, phrases: tuple[str, ...]) -> bool:
     low = text.lower().strip()
-    return any(low == p or low.startswith(p + " ") or low.startswith(p) and len(low) <= len(p) + 2 or p in low for p in phrases)
+    return any(low == p or low.startswith(p + " ") or p in low for p in phrases)
 
 
 _NAME_REF = re.compile(r"\byork\b", re.IGNORECASE)
 
 
 def _is_wake(text: str) -> Optional[str]:
-    """Return the payload if the message starts with a wake phrase ('hey york' etc)."""
     low = text.lower().strip()
     for p in settings.wake_phrases:
         if low.startswith(p):
@@ -36,7 +38,6 @@ def _is_wake(text: str) -> Optional[str]:
 
 
 def _has_name(text: str) -> bool:
-    """Does this message contain a bare reference to 'york'?"""
     return _NAME_REF.search(text) is not None
 
 
@@ -45,10 +46,6 @@ _IMG_TOKEN = re.compile(r"\[img:([^\]\n]{1,80})\]")
 
 
 async def _extract_media(text: str) -> Tuple[str, list[str]]:
-    """Pull `[gif:cat]` and `[img:query]` tokens and resolve them to URLs.
-
-    Returns (cleaned_text, media_urls). At most three media items per reply.
-    """
     urls: list[str] = []
     for t in _GIF_TOKEN.findall(text)[:2]:
         if t.lower() in GIF_CATEGORIES or t.lower() == "pet":
@@ -71,9 +68,12 @@ def _is_detach(text: str) -> bool:
     return False
 
 
-class ReplyView(discord.ui.View):
-    """Quick-action buttons attached to York's replies."""
+def _sanitize_ai_output(text: str) -> str:
+    """Remove @everyone and @here from AI-generated output."""
+    return _MASS_PING.sub(lambda m: m.group(0).replace("@", "@ "), text)
 
+
+class ReplyView(discord.ui.View):
     def __init__(self, cog: "Conversation", user_id: int):
         super().__init__(timeout=300)
         self.cog = cog
@@ -82,7 +82,9 @@ class ReplyView(discord.ui.View):
     @discord.ui.button(label="Detach", style=discord.ButtonStyle.secondary)
     async def detach_btn(self, interaction: discord.Interaction, _: discord.ui.Button):
         if interaction.user.id != self.user_id:
-            await interaction.response.send_message("Only the person I'm chatting with can detach me.", ephemeral=True)
+            await interaction.response.send_message(
+                "Only the person I am speaking with can detach me.", ephemeral=True,
+            )
             return
         self.cog.bot.memory.detach(interaction.channel_id, self.user_id)
         await interaction.response.send_message(
@@ -96,7 +98,7 @@ class ReplyView(discord.ui.View):
         await self.cog.respond_to(
             interaction.channel,
             interaction.user,
-            "Surprise me — proactively suggest something fun, useful, or interesting for me right now.",
+            "Suggest something useful, interesting, or helpful for me right now.",
             followup=interaction.followup,
         )
 
@@ -104,20 +106,13 @@ class ReplyView(discord.ui.View):
 class Conversation(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        # Per-channel last-message timestamp — used to decide when the
-        # channel has gone "quiet" enough for York to pipe up.
         self._last_activity: Dict[int, float] = {}
-        # (channel_id, user_id) -> pending reply task. If a new reference
-        # arrives from the same user, we cancel the old pending task and
-        # schedule a fresh one so York replies to the latest thought.
         self._pending: Dict[Tuple[int, int], asyncio.Task] = {}
 
-    # --------- core listener ---------
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
         if message.author.bot or not message.guild:
             return
-        # don't intercept commands
         ctx = await self.bot.get_context(message)
         if ctx.valid:
             return
@@ -130,12 +125,8 @@ class Conversation(commands.Cog):
         cid = message.channel.id
         uid = message.author.id
 
-        # Mark channel activity for queued-reply pacing.
         self._last_activity[cid] = time.time()
 
-        # PASSIVE LEARNING — York observes everyone's speech style on every
-        # message in the server (whether he's being talked to or not) so his
-        # replies can mirror how each person actually writes.
         for note in ai.infer_style_notes(text):
             mem.add_style_note(uid, note)
 
@@ -145,20 +136,14 @@ class Conversation(commands.Cog):
         is_passing = not is_direct and _has_name(text)
 
         if is_direct:
-            if wake_payload is not None:
-                prompt = wake_payload
-            else:
-                prompt = re.sub(rf"<@!?{self.bot.user.id}>", "", text).strip() or "(no message)"
-            # A direct address jumps the queue — cancel any pending passing
-            # reply for this user and answer now.
+            prompt = wake_payload if wake_payload is not None else (
+                re.sub(rf"<@!?{self.bot.user.id}>", "", text).strip() or "(no message)"
+            )
             self._cancel_pending(cid, uid)
             await self.respond_to(message.channel, message.author, prompt, reply_to=message)
             return
 
         if is_passing:
-            # Queued: York heard his name but doesn't want to interrupt.
-            # Replace any older queued reply from the same user and wait
-            # for the channel to quiet down before speaking.
             self._cancel_pending(cid, uid)
             task = asyncio.create_task(
                 self._deferred_reply(message.channel, message.author, text, message)
@@ -166,9 +151,6 @@ class Conversation(commands.Cog):
             self._pending[(cid, uid)] = task
             return
 
-        # Otherwise: not addressed, not referenced → stay quiet.
-
-    # --------- queued reply helpers ---------
     def _cancel_pending(self, cid: int, uid: int) -> None:
         task = self._pending.pop((cid, uid), None)
         if task and not task.done():
@@ -181,12 +163,6 @@ class Conversation(commands.Cog):
         prompt: str,
         reply_to: discord.Message,
     ) -> None:
-        """Wait until the channel is quiet enough, then reply.
-
-        Heuristic: don't speak until there have been at least ~4 seconds
-        of no new messages in the channel, but give up and reply anyway
-        after 20 seconds so he doesn't silently swallow the reference.
-        """
         QUIET_REQUIRED = 4.0
         MAX_WAIT = 20.0
         started = time.time()
@@ -205,7 +181,6 @@ class Conversation(commands.Cog):
         finally:
             self._pending.pop((channel.id, user.id), None)
 
-    # --------- shared responder ---------
     async def respond_to(
         self,
         channel: discord.abc.Messageable,
@@ -231,18 +206,16 @@ class Conversation(commands.Cog):
         )
         async with channel.typing() if hasattr(channel, "typing") else _null_ctx():
             answer = await ai.chat(msgs)
+
+        # Strip any mass pings the AI might have produced.
+        answer = _sanitize_ai_output(answer)
         mem.append_message(user.id, "assistant", answer)
 
-        # Parse out any [gif:category] tokens York used in his reply and
-        # resolve them to real GIF URLs. Discord auto-embeds image URLs
-        # in plain messages, so we just send the URL on its own line.
         text_out, gif_urls = await _extract_media(answer)
         if not text_out and not gif_urls:
-            text_out = answer  # fall back: shouldn't happen, but safe.
+            text_out = answer
 
-        # Plain chat-style reply — no embed, no buttons, just talks like a person.
-        # Discord caps a single message at 2000 chars; chunk if needed.
-        chunks = [text_out[i:i + 1900] for i in range(0, len(text_out), 1900)] or [""]
+        chunks = [text_out[i:i + 1900] for i in range(0, max(len(text_out), 1), 1900)]
         for i, chunk in enumerate(chunks):
             if not chunk:
                 continue
@@ -253,7 +226,6 @@ class Conversation(commands.Cog):
             else:
                 await channel.send(content=chunk)
 
-        # Send any GIF URLs as follow-up messages (Discord auto-embeds them).
         for url in gif_urls:
             await channel.send(url)
 
