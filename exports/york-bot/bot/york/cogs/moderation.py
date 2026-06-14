@@ -195,7 +195,7 @@ class Moderation(commands.Cog):
                 ],
                 footer=f"{settings.bot_name} · built by {settings.creator}",
             )
-            await member.send(components=[dm_c], flags=discord.MessageFlags(is_components_v2=True))
+            await member.send(components=[dm_c], flags=discord.MessageFlags(components_v2=True))
         except discord.Forbidden:
             pass
 
@@ -296,7 +296,7 @@ class Moderation(commands.Cog):
         if ctx.interaction:
             await ctx.interaction.followup.send(
                 components=[container],
-                flags=discord.MessageFlags(is_components_v2=True),
+                flags=discord.MessageFlags(components_v2=True),
                 ephemeral=True,
             )
         else:

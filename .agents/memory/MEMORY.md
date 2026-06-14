@@ -1,0 +1,1 @@
+- [discord.py Components V2 flag name](discord-v2-flag.md) — flag is `components_v2`, NOT `is_components_v2` — wrong name crashes every cog at import time

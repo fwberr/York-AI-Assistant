@@ -202,7 +202,7 @@ class Fun(commands.Cog):
                         f"{settings.emoji.spark}  Level Up!",
                         f"{message.author.mention} reached **level {lvl}** and earned **{bonus}** bonus coins.",
                     )],
-                    flags=discord.MessageFlags(is_components_v2=True),
+                    flags=discord.MessageFlags(components_v2=True),
                 )
             except discord.HTTPException:
                 pass

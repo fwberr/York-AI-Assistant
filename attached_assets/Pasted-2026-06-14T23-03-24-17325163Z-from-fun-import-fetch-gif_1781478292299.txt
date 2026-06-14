@@ -1,0 +1,200 @@
+2026-06-14T23:03:24.17325163Z     from .fun import fetch_gif, fetch_image, GIF_CATEGORIES
+2026-06-14T23:03:24.17325604Z   File "/opt/render/project/src/bot/york/cogs/fun.py", line 16, in <module>
+2026-06-14T23:03:24.17326151Z     from .. import v2
+2026-06-14T23:03:24.17326633Z   File "/opt/render/project/src/bot/york/v2.py", line 16, in <module>
+2026-06-14T23:03:24.17327099Z     _V2_FLAGS = discord.MessageFlags(is_components_v2=True)
+2026-06-14T23:03:24.17327617Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/flags.py", line 170, in __init__
+2026-06-14T23:03:24.17328079Z     raise TypeError(f'{key!r} is not a valid flag name.')
+2026-06-14T23:03:24.173285341Z TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.173289821Z 
+2026-06-14T23:03:24.173294391Z The above exception was the direct cause of the following exception:
+2026-06-14T23:03:24.173298951Z 
+2026-06-14T23:03:24.173303661Z Traceback (most recent call last):
+2026-06-14T23:03:24.173308411Z   File "/opt/render/project/src/bot/york.py", line 54, in setup_hook
+2026-06-14T23:03:24.173313031Z     await self.load_extension(ext)
+2026-06-14T23:03:24.173318191Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 1040, in load_extension
+2026-06-14T23:03:24.173322931Z     await self._load_from_module_spec(spec, name)
+2026-06-14T23:03:24.173327481Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 965, in _load_from_module_spec
+2026-06-14T23:03:24.173331831Z     raise errors.ExtensionFailed(key, e) from e
+2026-06-14T23:03:24.173336891Z discord.ext.commands.errors.ExtensionFailed: Extension 'york.cogs.conversation' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.179456179Z 2026-06-14 23:03:24,178 | ERROR   | york | Failed to load york.cogs.moderation: Extension 'york.cogs.moderation' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.1795165Z Traceback (most recent call last):
+2026-06-14T23:03:24.17952341Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 962, in _load_from_module_spec
+2026-06-14T23:03:24.17952672Z     spec.loader.exec_module(lib)  # type: ignore
+2026-06-14T23:03:24.17953021Z     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-06-14T23:03:24.17953353Z   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+2026-06-14T23:03:24.17953672Z   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+2026-06-14T23:03:24.17954045Z   File "/opt/render/project/src/bot/york/cogs/moderation.py", line 14, in <module>
+2026-06-14T23:03:24.17954454Z     from .. import v2
+2026-06-14T23:03:24.179547671Z   File "/opt/render/project/src/bot/york/v2.py", line 16, in <module>
+2026-06-14T23:03:24.17955122Z     _V2_FLAGS = discord.MessageFlags(is_components_v2=True)
+2026-06-14T23:03:24.179554881Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/flags.py", line 170, in __init__
+2026-06-14T23:03:24.179558031Z     raise TypeError(f'{key!r} is not a valid flag name.')
+2026-06-14T23:03:24.179561241Z TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.179564291Z 
+2026-06-14T23:03:24.179567551Z The above exception was the direct cause of the following exception:
+2026-06-14T23:03:24.179570251Z 
+2026-06-14T23:03:24.179573181Z Traceback (most recent call last):
+2026-06-14T23:03:24.179576171Z   File "/opt/render/project/src/bot/york.py", line 54, in setup_hook
+2026-06-14T23:03:24.179579511Z     await self.load_extension(ext)
+2026-06-14T23:03:24.179583301Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 1040, in load_extension
+2026-06-14T23:03:24.179586641Z     await self._load_from_module_spec(spec, name)
+2026-06-14T23:03:24.179589741Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 965, in _load_from_module_spec
+2026-06-14T23:03:24.179592772Z     raise errors.ExtensionFailed(key, e) from e
+2026-06-14T23:03:24.179599121Z discord.ext.commands.errors.ExtensionFailed: Extension 'york.cogs.moderation' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.18335357Z 2026-06-14 23:03:24,182 | ERROR   | york | Failed to load york.cogs.insights: Extension 'york.cogs.insights' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.18336679Z Traceback (most recent call last):
+2026-06-14T23:03:24.18337106Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 962, in _load_from_module_spec
+2026-06-14T23:03:24.18337494Z     spec.loader.exec_module(lib)  # type: ignore
+2026-06-14T23:03:24.18337861Z     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-06-14T23:03:24.18338248Z   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+2026-06-14T23:03:24.18338583Z   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+2026-06-14T23:03:24.18338865Z   File "/opt/render/project/src/bot/york/cogs/insights.py", line 10, in <module>
+2026-06-14T23:03:24.18339184Z     from .. import v2
+2026-06-14T23:03:24.18339496Z   File "/opt/render/project/src/bot/york/v2.py", line 16, in <module>
+2026-06-14T23:03:24.183398351Z     _V2_FLAGS = discord.MessageFlags(is_components_v2=True)
+2026-06-14T23:03:24.183402021Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/flags.py", line 170, in __init__
+2026-06-14T23:03:24.183414581Z     raise TypeError(f'{key!r} is not a valid flag name.')
+2026-06-14T23:03:24.183417861Z TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.183420761Z 
+2026-06-14T23:03:24.183423911Z The above exception was the direct cause of the following exception:
+2026-06-14T23:03:24.183426881Z 
+2026-06-14T23:03:24.183429871Z Traceback (most recent call last):
+2026-06-14T23:03:24.183432911Z   File "/opt/render/project/src/bot/york.py", line 54, in setup_hook
+2026-06-14T23:03:24.183436051Z     await self.load_extension(ext)
+2026-06-14T23:03:24.183439771Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 1040, in load_extension
+2026-06-14T23:03:24.183442421Z     await self._load_from_module_spec(spec, name)
+2026-06-14T23:03:24.183445292Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 965, in _load_from_module_spec
+2026-06-14T23:03:24.183447841Z     raise errors.ExtensionFailed(key, e) from e
+2026-06-14T23:03:24.183451512Z discord.ext.commands.errors.ExtensionFailed: Extension 'york.cogs.insights' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.273112594Z 2026-06-14 23:03:24,269 | ERROR   | york | Failed to load york.cogs.fun: Extension 'york.cogs.fun' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.273129725Z Traceback (most recent call last):
+2026-06-14T23:03:24.273134005Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 962, in _load_from_module_spec
+2026-06-14T23:03:24.273137515Z     spec.loader.exec_module(lib)  # type: ignore
+2026-06-14T23:03:24.273141105Z     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-06-14T23:03:24.273146425Z   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+2026-06-14T23:03:24.273149525Z   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+2026-06-14T23:03:24.273152445Z   File "/opt/render/project/src/bot/york/cogs/fun.py", line 16, in <module>
+2026-06-14T23:03:24.273155995Z     from .. import v2
+2026-06-14T23:03:24.273159045Z   File "/opt/render/project/src/bot/york/v2.py", line 16, in <module>
+2026-06-14T23:03:24.273163475Z     _V2_FLAGS = discord.MessageFlags(is_components_v2=True)
+2026-06-14T23:03:24.273167996Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/flags.py", line 170, in __init__
+2026-06-14T23:03:24.273170856Z     raise TypeError(f'{key!r} is not a valid flag name.')
+2026-06-14T23:03:24.273173745Z TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.273176706Z 
+2026-06-14T23:03:24.273179636Z The above exception was the direct cause of the following exception:
+2026-06-14T23:03:24.273182166Z 
+2026-06-14T23:03:24.273185306Z Traceback (most recent call last):
+2026-06-14T23:03:24.273188176Z   File "/opt/render/project/src/bot/york.py", line 54, in setup_hook
+2026-06-14T23:03:24.273191196Z     await self.load_extension(ext)
+2026-06-14T23:03:24.273194706Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 1040, in load_extension
+2026-06-14T23:03:24.273197726Z     await self._load_from_module_spec(spec, name)
+2026-06-14T23:03:24.273200626Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 965, in _load_from_module_spec
+2026-06-14T23:03:24.273203496Z     raise errors.ExtensionFailed(key, e) from e
+2026-06-14T23:03:24.273206586Z discord.ext.commands.errors.ExtensionFailed: Extension 'york.cogs.fun' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.284023971Z 2026-06-14 23:03:24,282 | ERROR   | york | Failed to load york.cogs.economy: Extension 'york.cogs.economy' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.284044361Z Traceback (most recent call last):
+2026-06-14T23:03:24.284049171Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 962, in _load_from_module_spec
+2026-06-14T23:03:24.284052942Z     spec.loader.exec_module(lib)  # type: ignore
+2026-06-14T23:03:24.284057922Z     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-06-14T23:03:24.284062352Z   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+2026-06-14T23:03:24.284066662Z   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+2026-06-14T23:03:24.284070672Z   File "/opt/render/project/src/bot/york/cogs/economy.py", line 13, in <module>
+2026-06-14T23:03:24.284074072Z     from .. import v2
+2026-06-14T23:03:24.284077912Z   File "/opt/render/project/src/bot/york/v2.py", line 16, in <module>
+2026-06-14T23:03:24.284083152Z     _V2_FLAGS = discord.MessageFlags(is_components_v2=True)
+2026-06-14T23:03:24.284087632Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/flags.py", line 170, in __init__
+2026-06-14T23:03:24.284091262Z     raise TypeError(f'{key!r} is not a valid flag name.')
+2026-06-14T23:03:24.284095362Z TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.284098643Z 
+2026-06-14T23:03:24.284102432Z The above exception was the direct cause of the following exception:
+2026-06-14T23:03:24.284106293Z 
+2026-06-14T23:03:24.284109843Z Traceback (most recent call last):
+2026-06-14T23:03:24.284116783Z   File "/opt/render/project/src/bot/york.py", line 54, in setup_hook
+2026-06-14T23:03:24.284120403Z     await self.load_extension(ext)
+2026-06-14T23:03:24.284124463Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 1040, in load_extension
+2026-06-14T23:03:24.284127893Z     await self._load_from_module_spec(spec, name)
+2026-06-14T23:03:24.284131583Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 965, in _load_from_module_spec
+2026-06-14T23:03:24.284135123Z     raise errors.ExtensionFailed(key, e) from e
+2026-06-14T23:03:24.284139703Z discord.ext.commands.errors.ExtensionFailed: Extension 'york.cogs.economy' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.372647712Z 2026-06-14 23:03:24,371 | ERROR   | york | Failed to load york.cogs.fishing: Extension 'york.cogs.fishing' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.372675692Z Traceback (most recent call last):
+2026-06-14T23:03:24.372680913Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 962, in _load_from_module_spec
+2026-06-14T23:03:24.372684963Z     spec.loader.exec_module(lib)  # type: ignore
+2026-06-14T23:03:24.372689553Z     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-06-14T23:03:24.372694053Z   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+2026-06-14T23:03:24.372697973Z   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+2026-06-14T23:03:24.372701673Z   File "/opt/render/project/src/bot/york/cogs/fishing.py", line 10, in <module>
+2026-06-14T23:03:24.372706253Z     from .. import v2
+2026-06-14T23:03:24.372710293Z   File "/opt/render/project/src/bot/york/v2.py", line 16, in <module>
+2026-06-14T23:03:24.372715113Z     _V2_FLAGS = discord.MessageFlags(is_components_v2=True)
+2026-06-14T23:03:24.372718664Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/flags.py", line 170, in __init__
+2026-06-14T23:03:24.372730354Z     raise TypeError(f'{key!r} is not a valid flag name.')
+2026-06-14T23:03:24.372732924Z TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.372735224Z 
+2026-06-14T23:03:24.372737734Z The above exception was the direct cause of the following exception:
+2026-06-14T23:03:24.372740074Z 
+2026-06-14T23:03:24.372742494Z Traceback (most recent call last):
+2026-06-14T23:03:24.372747924Z   File "/opt/render/project/src/bot/york.py", line 54, in setup_hook
+2026-06-14T23:03:24.372750434Z     await self.load_extension(ext)
+2026-06-14T23:03:24.372753864Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 1040, in load_extension
+2026-06-14T23:03:24.372756304Z     await self._load_from_module_spec(spec, name)
+2026-06-14T23:03:24.372758814Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 965, in _load_from_module_spec
+2026-06-14T23:03:24.372761354Z     raise errors.ExtensionFailed(key, e) from e
+2026-06-14T23:03:24.372765414Z discord.ext.commands.errors.ExtensionFailed: Extension 'york.cogs.fishing' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.377210477Z 2026-06-14 23:03:24,376 | ERROR   | york | Failed to load york.cogs.starboard: Extension 'york.cogs.starboard' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.377220647Z Traceback (most recent call last):
+2026-06-14T23:03:24.377223457Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 962, in _load_from_module_spec
+2026-06-14T23:03:24.377225527Z     spec.loader.exec_module(lib)  # type: ignore
+2026-06-14T23:03:24.377227597Z     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-06-14T23:03:24.377229877Z   File "<frozen importlib._bootstrap_external>", line 759, in exec_module
+2026-06-14T23:03:24.377231917Z   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+2026-06-14T23:03:24.377235477Z   File "/opt/render/project/src/bot/york/cogs/starboard.py", line 28, in <module>
+2026-06-14T23:03:24.377238007Z     from .. import v2
+2026-06-14T23:03:24.377240047Z   File "/opt/render/project/src/bot/york/v2.py", line 16, in <module>
+2026-06-14T23:03:24.377242167Z     _V2_FLAGS = discord.MessageFlags(is_components_v2=True)
+2026-06-14T23:03:24.377244278Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/flags.py", line 170, in __init__
+2026-06-14T23:03:24.377246178Z     raise TypeError(f'{key!r} is not a valid flag name.')
+2026-06-14T23:03:24.377248138Z TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.377249967Z 
+2026-06-14T23:03:24.377251998Z The above exception was the direct cause of the following exception:
+2026-06-14T23:03:24.377253858Z 
+2026-06-14T23:03:24.377255798Z Traceback (most recent call last):
+2026-06-14T23:03:24.377257798Z   File "/opt/render/project/src/bot/york.py", line 54, in setup_hook
+2026-06-14T23:03:24.377259758Z     await self.load_extension(ext)
+2026-06-14T23:03:24.377261928Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 1040, in load_extension
+2026-06-14T23:03:24.377263868Z     await self._load_from_module_spec(spec, name)
+2026-06-14T23:03:24.377265798Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 965, in _load_from_module_spec
+2026-06-14T23:03:24.377267738Z     raise errors.ExtensionFailed(key, e) from e
+2026-06-14T23:03:24.377269968Z discord.ext.commands.errors.ExtensionFailed: Extension 'york.cogs.starboard' raised an error: TypeError: 'is_components_v2' is not a valid flag name.
+2026-06-14T23:03:24.475380826Z 2026-06-14 23:03:24,474 | INFO    | york | Loaded extension: york.cogs.proactive
+2026-06-14T23:03:24.476866897Z 2026-06-14 23:03:24,475 | ERROR   | york | Failed to load york.cogs.help_cog: Extension 'york.cogs.help_cog' raised an error: SyntaxError: invalid syntax. Is this intended to be part of the string? (help_cog.py, line 23)
+2026-06-14T23:03:24.476879697Z Traceback (most recent call last):
+2026-06-14T23:03:24.476883568Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 962, in _load_from_module_spec
+2026-06-14T23:03:24.476886128Z     spec.loader.exec_module(lib)  # type: ignore
+2026-06-14T23:03:24.476888968Z     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-06-14T23:03:24.476891928Z   File "<frozen importlib._bootstrap_external>", line 755, in exec_module
+2026-06-14T23:03:24.476894428Z   File "<frozen importlib._bootstrap_external>", line 893, in get_code
+2026-06-14T23:03:24.476896858Z   File "<frozen importlib._bootstrap_external>", line 823, in source_to_code
+2026-06-14T23:03:24.476899208Z   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+2026-06-14T23:03:24.476901678Z   File "/opt/render/project/src/bot/york/cogs/help_cog.py", line 23
+2026-06-14T23:03:24.476904508Z     ("Real photos", ""Show me a picture of a red panda" — he fetches a safe-for-work photo."),
+2026-06-14T23:03:24.476907268Z                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:03:24.476910038Z SyntaxError: invalid syntax. Is this intended to be part of the string?
+2026-06-14T23:03:24.476913188Z 
+2026-06-14T23:03:24.476917428Z The above exception was the direct cause of the following exception:
+2026-06-14T23:03:24.476921308Z 
+2026-06-14T23:03:24.476925268Z Traceback (most recent call last):
+2026-06-14T23:03:24.476929678Z   File "/opt/render/project/src/bot/york.py", line 54, in setup_hook
+2026-06-14T23:03:24.476933709Z     await self.load_extension(ext)
+2026-06-14T23:03:24.476938069Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 1040, in load_extension
+2026-06-14T23:03:24.476941809Z     await self._load_from_module_spec(spec, name)
+2026-06-14T23:03:24.476945599Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 965, in _load_from_module_spec
+2026-06-14T23:03:24.476949349Z     raise errors.ExtensionFailed(key, e) from e
+2026-06-14T23:03:24.476954129Z discord.ext.commands.errors.ExtensionFailed: Extension 'york.cogs.help_cog' raised an error: SyntaxError: invalid syntax. Is this intended to be part of the string? (help_cog.py, line 23)
+2026-06-14T23:03:24.478593803Z 2026-06-14 23:03:24,478 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:03:24 +0000] "GET / HTTP/1.1" 200 168 "-" "Go-http-client/2.0"
+2026-06-14T23:03:25.053614039Z 2026-06-14 23:03:25,053 | INFO    | york | Synced 0 slash commands
+2026-06-14T23:03:25.433449199Z 2026-06-14 23:03:25,432 | INFO    | discord.gateway | Shard ID None has connected to Gateway (Session ID: 09d155af67e85a4363b3cb1f79a2e533).
+2026-06-14T23:03:28.275648882Z 2026-06-14 23:03:28,275 | INFO    | york | York online as York#2771 (id=1496154816206864434)
+2026-06-14T23:03:40.315029584Z 2026-06-14 23:03:40,314 | ERROR   | discord.ext.commands.bot | Ignoring exception in command None
+2026-06-14T23:03:40.315046805Z discord.ext.commands.errors.CommandNotFound: Command "help" is not found

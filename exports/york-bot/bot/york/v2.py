@@ -13,7 +13,7 @@ import discord
 from .config import settings
 
 # Message flag that tells Discord to treat components as V2 layout.
-_V2_FLAGS = discord.MessageFlags(is_components_v2=True)
+_V2_FLAGS = discord.MessageFlags(components_v2=True)
 
 # ---------------------------------------------------------------------------
 # Colour helpers

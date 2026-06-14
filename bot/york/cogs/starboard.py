@@ -325,7 +325,7 @@ class Starboard(commands.Cog):
         container = await self._build_starboard_container(message, star_count, watch_emoji)
         return await sb_channel.send(
             components=[container],
-            flags=discord.MessageFlags(is_components_v2=True),
+            flags=discord.MessageFlags(components_v2=True),
         )
 
     async def _edit_starboard_message(
@@ -338,7 +338,7 @@ class Starboard(commands.Cog):
         container = await self._build_starboard_container(original, star_count, watch_emoji)
         await sb_msg.edit(
             components=[container],
-            flags=discord.MessageFlags(is_components_v2=True),
+            flags=discord.MessageFlags(components_v2=True),
         )
 
     # -------- error handler --------

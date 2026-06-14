@@ -637,7 +637,7 @@ class _BlackjackView(discord.ui.View):
             return
         await interaction.response.edit_message(
             components=[self.render()],
-            flags=discord.MessageFlags(is_components_v2=True),
+            flags=discord.MessageFlags(components_v2=True),
             view=self,
         )
 
