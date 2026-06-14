@@ -2,14 +2,20 @@
 
 Works with OpenAI, Groq, or any OpenAI-compatible provider.
 Provider is auto-detected from environment variables (see config.py).
+
+Groq note: Render (and some other cloud hosts) have their datacenter IPs
+blocked by Groq when requests arrive via the openai SDK (httpx-based).
+For Groq we bypass the SDK entirely and use aiohttp directly — it has
+different TLS/network characteristics that pass through without a 403.
 """
 from __future__ import annotations
 
+import json
 import logging
 import re
 from typing import List
 
-import httpx
+import aiohttp
 from openai import AsyncOpenAI
 
 from .config import settings
@@ -18,11 +24,9 @@ log = logging.getLogger("york.ai")
 
 _client: AsyncOpenAI | None = None
 
-# Groq (and some other providers) return 403 from certain cloud hosting IPs
-# when the request looks like a raw SDK call. Sending a realistic User-Agent
-# and disabling httpx's default connection pooling fingerprint is the
-# most reliable client-side workaround.
-_GROQ_HEADERS = {
+_GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+_AIOHTTP_HEADERS = {
+    "Content-Type": "application/json",
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -31,8 +35,28 @@ _GROQ_HEADERS = {
 }
 
 
+def _is_groq() -> bool:
+    return "groq.com" in (settings.ai_url or "")
+
+
+async def _groq_chat(messages: List[dict], model: str, max_tokens: int) -> str:
+    """Call Groq directly via aiohttp, bypassing the openai SDK / httpx stack."""
+    headers = {**_AIOHTTP_HEADERS, "Authorization": f"Bearer {settings.ai_key}"}
+    payload = {"model": model, "messages": messages, "max_tokens": max_tokens}
+    timeout = aiohttp.ClientTimeout(total=30)
+    async with aiohttp.ClientSession(headers=headers, timeout=timeout) as session:
+        async with session.post(_GROQ_URL, json=payload) as resp:
+            data = await resp.json(content_type=None)
+            if resp.status != 200:
+                err = data.get("error", {}).get("message", str(data))
+                raise RuntimeError(f"Groq {resp.status}: {err}")
+            return (data["choices"][0]["message"]["content"] or "").strip()
+
+
 def client() -> AsyncOpenAI | None:
     global _client
+    if _is_groq():
+        return None  # Groq uses aiohttp path, not the SDK
     key = settings.ai_key
     if not key:
         return None
@@ -40,17 +64,8 @@ def client() -> AsyncOpenAI | None:
         kwargs: dict = {"api_key": key}
         if settings.ai_url:
             kwargs["base_url"] = settings.ai_url
-        if "groq.com" in (settings.ai_url or ""):
-            kwargs["http_client"] = httpx.AsyncClient(
-                headers=_GROQ_HEADERS,
-                timeout=httpx.Timeout(30.0),
-            )
         _client = AsyncOpenAI(**kwargs)
     return _client
-
-
-def _is_groq() -> bool:
-    return "groq.com" in (settings.ai_url or "")
 
 
 SYSTEM_PROMPT = """You are York, a professional Jarvis-style AI assistant living inside a Discord server.
@@ -115,27 +130,26 @@ def build_messages(
 
 
 async def chat(messages: List[dict]) -> str:
-    c = client()
-    if c is None:
+    if not settings.ai_key:
         return (
             "My AI module is currently offline. "
             "Set GROQ_API_KEY or OPENAI_API_KEY in your environment variables."
         )
     try:
-        # Build kwargs that work across providers.
-        # - reasoning_effort is OpenAI o-series only → omit for Groq and others.
-        # - max_tokens is the universal param; max_completion_tokens is newer OpenAI alias.
-        kwargs: dict = {
-            "model": settings.ai_model,
-            "messages": messages,
-            "max_tokens": 600,
-        }
-        if not _is_groq():
-            # Only pass OpenAI-specific params when not on Groq.
-            kwargs["max_completion_tokens"] = 600
-            del kwargs["max_tokens"]
+        # Groq: use aiohttp directly to avoid the httpx fingerprint that
+        # causes 403 "Access denied" errors on cloud-hosted environments.
+        if _is_groq():
+            return await _groq_chat(messages, settings.ai_model, 600)
 
-        resp = await c.chat.completions.create(**kwargs)
+        # OpenAI / other providers: use the SDK as normal.
+        c = client()
+        if c is None:
+            return "My AI module is currently offline."
+        resp = await c.chat.completions.create(
+            model=settings.ai_model,
+            messages=messages,
+            max_completion_tokens=600,
+        )
         return (resp.choices[0].message.content or "").strip()
     except Exception as exc:
         log.exception("AI call failed: %s", exc)
