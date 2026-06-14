@@ -1,0 +1,17 @@
+services:
+  - type: worker
+    name: york-bot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot/york.py
+    envVars:
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: DATA_DIR
+        value: /data
+    disk:
+      name: york-data
+      mountPath: /data
+      sizeGB: 1
