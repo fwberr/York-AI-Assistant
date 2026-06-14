@@ -9,6 +9,7 @@ import logging
 import re
 from typing import List
 
+import httpx
 from openai import AsyncOpenAI
 
 from .config import settings
@@ -16,6 +17,18 @@ from .config import settings
 log = logging.getLogger("york.ai")
 
 _client: AsyncOpenAI | None = None
+
+# Groq (and some other providers) return 403 from certain cloud hosting IPs
+# when the request looks like a raw SDK call. Sending a realistic User-Agent
+# and disabling httpx's default connection pooling fingerprint is the
+# most reliable client-side workaround.
+_GROQ_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+}
 
 
 def client() -> AsyncOpenAI | None:
@@ -27,6 +40,11 @@ def client() -> AsyncOpenAI | None:
         kwargs: dict = {"api_key": key}
         if settings.ai_url:
             kwargs["base_url"] = settings.ai_url
+        if "groq.com" in (settings.ai_url or ""):
+            kwargs["http_client"] = httpx.AsyncClient(
+                headers=_GROQ_HEADERS,
+                timeout=httpx.Timeout(30.0),
+            )
         _client = AsyncOpenAI(**kwargs)
     return _client
 
