@@ -1,0 +1,100 @@
+2026-06-14T23:09:43.561993961Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-06-14T23:09:57.830722825Z ==> Running 'python bot/york.py'
+2026-06-14T23:10:08.743740133Z DATA_DIR /data is not writable, trying fallback…
+2026-06-14T23:10:09.439177788Z 2026-06-14 23:10:09,438 | WARNING | york | OPENAI_API_KEY missing — AI conversation will be disabled.
+2026-06-14T23:10:09.43924661Z 2026-06-14 23:10:09,439 | INFO    | york.keepalive | Keep-alive server listening on http://0.0.0.0:10000
+2026-06-14T23:10:09.439868974Z 2026-06-14 23:10:09,439 | WARNING | discord.client | PyNaCl is not installed, voice will NOT be supported
+2026-06-14T23:10:09.439972406Z 2026-06-14 23:10:09,439 | WARNING | discord.client | davey is not installed, voice will NOT be supported
+2026-06-14T23:10:09.440328864Z 2026-06-14 23:10:09,440 | INFO    | discord.client | logging in using static token
+2026-06-14T23:10:09.638962633Z 2026-06-14 23:10:09,638 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:10:09 +0000] "HEAD / HTTP/1.1" 200 153 "-" "Go-http-client/1.1"
+2026-06-14T23:10:14.486734392Z ==> Your service is live 🎉
+2026-06-14T23:10:14.683668675Z ==> 
+2026-06-14T23:10:14.690341815Z ==> ///////////////////////////////////////////////////////////
+2026-06-14T23:10:14.70338043Z ==> 
+2026-06-14T23:10:14.709630532Z ==> Available at your primary URL https://york-ai-assistant-1.onrender.com
+2026-06-14T23:10:14.714974549Z ==> 
+2026-06-14T23:10:14.718671705Z ==> ///////////////////////////////////////////////////////////
+2026-06-14T23:10:22.43481536Z 2026-06-14 23:10:22,433 | INFO    | york | Loaded extension: york.cogs.conversation
+2026-06-14T23:10:22.536646889Z 2026-06-14 23:10:22,535 | INFO    | york | Loaded extension: york.cogs.moderation
+2026-06-14T23:10:22.627752653Z 2026-06-14 23:10:22,627 | INFO    | york | Loaded extension: york.cogs.insights
+2026-06-14T23:10:22.635483953Z 2026-06-14 23:10:22,635 | INFO    | york | Loaded extension: york.cogs.fun
+2026-06-14T23:10:22.73860242Z 2026-06-14 23:10:22,738 | INFO    | york | Loaded extension: york.cogs.economy
+2026-06-14T23:10:22.829264035Z 2026-06-14 23:10:22,829 | INFO    | york | Loaded extension: york.cogs.fishing
+2026-06-14T23:10:22.837893344Z 2026-06-14 23:10:22,836 | INFO    | york | Loaded extension: york.cogs.starboard
+2026-06-14T23:10:22.926547585Z 2026-06-14 23:10:22,926 | INFO    | york | Loaded extension: york.cogs.proactive
+2026-06-14T23:10:22.929473139Z 2026-06-14 23:10:22,927 | ERROR   | york | Failed to load york.cogs.help_cog: Extension 'york.cogs.help_cog' raised an error: SyntaxError: invalid syntax. Is this intended to be part of the string? (help_cog.py, line 23)
+2026-06-14T23:10:22.92949242Z Traceback (most recent call last):
+2026-06-14T23:10:22.92949691Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 962, in _load_from_module_spec
+2026-06-14T23:10:22.92950014Z     spec.loader.exec_module(lib)  # type: ignore
+2026-06-14T23:10:22.92950506Z     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+2026-06-14T23:10:22.92951102Z   File "<frozen importlib._bootstrap_external>", line 755, in exec_module
+2026-06-14T23:10:22.9295162Z   File "<frozen importlib._bootstrap_external>", line 893, in get_code
+2026-06-14T23:10:22.92952194Z   File "<frozen importlib._bootstrap_external>", line 823, in source_to_code
+2026-06-14T23:10:22.929526611Z   File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed
+2026-06-14T23:10:22.92953114Z   File "/opt/render/project/src/bot/york/cogs/help_cog.py", line 23
+2026-06-14T23:10:22.929536281Z     ("Real photos", ""Show me a picture of a red panda" — he fetches a safe-for-work photo."),
+2026-06-14T23:10:22.929541251Z                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:10:22.929545631Z SyntaxError: invalid syntax. Is this intended to be part of the string?
+2026-06-14T23:10:22.929549911Z 
+2026-06-14T23:10:22.929554691Z The above exception was the direct cause of the following exception:
+2026-06-14T23:10:22.929570521Z 
+2026-06-14T23:10:22.929575492Z Traceback (most recent call last):
+2026-06-14T23:10:22.929580112Z   File "/opt/render/project/src/bot/york.py", line 54, in setup_hook
+2026-06-14T23:10:22.929584892Z     await self.load_extension(ext)
+2026-06-14T23:10:22.929590012Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 1040, in load_extension
+2026-06-14T23:10:22.929605902Z     await self._load_from_module_spec(spec, name)
+2026-06-14T23:10:22.929609242Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/bot.py", line 965, in _load_from_module_spec
+2026-06-14T23:10:22.929612512Z     raise errors.ExtensionFailed(key, e) from e
+2026-06-14T23:10:22.929617942Z discord.ext.commands.errors.ExtensionFailed: Extension 'york.cogs.help_cog' raised an error: SyntaxError: invalid syntax. Is this intended to be part of the string? (help_cog.py, line 23)
+2026-06-14T23:10:22.932695Z 2026-06-14 23:10:22,932 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:10:22 +0000] "GET / HTTP/1.1" 200 168 "-" "Go-http-client/2.0"
+2026-06-14T23:10:24.36736754Z 2026-06-14 23:10:24,366 | INFO    | york | Synced 47 slash commands
+2026-06-14T23:10:24.731087793Z 2026-06-14 23:10:24,730 | INFO    | discord.gateway | Shard ID None has connected to Gateway (Session ID: bde792d181d1c8e15d56f643ec5b6ef3).
+2026-06-14T23:10:25.324623577Z 2026-06-14 23:10:25,324 | ERROR   | discord.ext.commands.bot | Ignoring exception in command None
+2026-06-14T23:10:25.324646378Z discord.ext.commands.errors.CommandNotFound: Command "help" is not found
+2026-06-14T23:10:27.240708887Z 2026-06-14 23:10:27,239 | INFO    | york | York online as York#2771 (id=1496154816206864434)
+2026-06-14T23:10:27.460513449Z 2026-06-14 23:10:27,460 | INFO    | aiohttp.access | 127.0.0.1 [14/Jun/2026:23:10:27 +0000] "HEAD / HTTP/1.1" 200 153 "https://york-ai-assistant-1.onrender.com" "Mozilla/5.0+(compatible; UptimeRobot/2.0; http://www.uptimerobot.com/)"
+2026-06-14T23:10:45.227138228Z 2026-06-14 23:10:45,140 | ERROR   | discord.ext.commands.bot | Ignoring exception in command fish
+2026-06-14T23:10:45.227164979Z Traceback (most recent call last):
+2026-06-14T23:10:45.227171279Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/app_commands/commands.py", line 858, in _do_call
+2026-06-14T23:10:45.227177299Z     return await self._callback(self.binding, interaction, **params)  # type: ignore
+2026-06-14T23:10:45.227182909Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:10:45.227187069Z   File "/opt/render/project/src/bot/york/cogs/fishing.py", line 99, in fish
+2026-06-14T23:10:45.22719142Z     await v2.send(ctx, v2.success(
+2026-06-14T23:10:45.22719576Z                        ~~~~~~~~~~^
+2026-06-14T23:10:45.22719976Z         f"{settings.emoji.fish}  Catch!",
+2026-06-14T23:10:45.2272039Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:10:45.22720796Z         f"You caught **{name}** and sold it for **{coins}** coins.\n"
+2026-06-14T23:10:45.22721235Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:10:45.22721658Z         f"Balance: **{p['coins']:,}** coins.",
+2026-06-14T23:10:45.22722074Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:10:45.22722492Z     ))
+2026-06-14T23:10:45.227229081Z     ^
+2026-06-14T23:10:45.22723333Z   File "/opt/render/project/src/bot/york/v2.py", line 119, in success
+2026-06-14T23:10:45.227237551Z     return build("success", f"{settings.emoji.ok}  {title}", body, **kw)
+2026-06-14T23:10:45.227245521Z   File "/opt/render/project/src/bot/york/v2.py", line 87, in build
+2026-06-14T23:10:45.227250861Z     c.add_item(_section(header_md, thumbnail_url))
+2026-06-14T23:10:45.227255071Z                ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:10:45.227259181Z   File "/opt/render/project/src/bot/york/v2.py", line 53, in _section
+2026-06-14T23:10:45.227263411Z     return discord.ui.Section(components=[txt])
+2026-06-14T23:10:45.227267571Z            ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+2026-06-14T23:10:45.227284372Z TypeError: Section.__init__() got an unexpected keyword argument 'components'
+2026-06-14T23:10:45.227287162Z 
+2026-06-14T23:10:45.227289842Z The above exception was the direct cause of the following exception:
+2026-06-14T23:10:45.227292272Z 
+2026-06-14T23:10:45.227294802Z Traceback (most recent call last):
+2026-06-14T23:10:45.227297992Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/hybrid.py", line 463, in _invoke_with_namespace
+2026-06-14T23:10:45.227300482Z     value = await self._do_call(ctx, ctx.kwargs)  # type: ignore
+2026-06-14T23:10:45.227302922Z             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:10:45.227305482Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/app_commands/commands.py", line 873, in _do_call
+2026-06-14T23:10:45.227307972Z     raise CommandInvokeError(self, e) from e
+2026-06-14T23:10:45.227310962Z discord.app_commands.errors.CommandInvokeError: Command 'fish' raised an exception: TypeError: Section.__init__() got an unexpected keyword argument 'components'
+2026-06-14T23:10:45.227313152Z 
+2026-06-14T23:10:45.227315692Z The above exception was the direct cause of the following exception:
+2026-06-14T23:10:45.227318083Z 
+2026-06-14T23:10:45.227320432Z Traceback (most recent call last):
+2026-06-14T23:10:45.227322963Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/ext/commands/hybrid.py", line 463, in _invoke_with_namespace
+2026-06-14T23:10:45.227325432Z     value = await self._do_call(ctx, ctx.kwargs)  # type: ignore
+2026-06-14T23:10:45.227327803Z             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-14T23:10:45.227330443Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/discord/app_commands/commands.py", line 873, in _do_call
+2026-06-14T23:10:45.227333073Z     raise CommandInvokeError(self, e) from e
+2026-06-14T23:10:45.227336373Z discord.ext.commands.errors.HybridCommandError: Hybrid command raised an error: Command 'fish' raised an exception: TypeError: Section.__init__() got an unexpected keyword argument 'components'

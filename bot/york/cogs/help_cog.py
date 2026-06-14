@@ -20,7 +20,7 @@ CATEGORIES = {
     "Ask York for…": (
         "Things York can fetch or do mid-conversation.",
         [
-            ("Real photos", ""Show me a picture of a red panda" — he fetches a safe-for-work photo."),
+            ("Real photos", "'Show me a picture of a red panda' -- he fetches a safe-for-work photo."),
             ("Reaction GIFs", "Ask for a hug, cheer, or facepalm and he will drop an anime reaction GIF."),
             ("Questions & advice", "Math, code explanations, opinions, recommendations — just ask."),
             ("Proactive ideas", "Sometimes he will volunteer a thought without being asked."),

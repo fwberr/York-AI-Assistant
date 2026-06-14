@@ -1,8 +1,11 @@
-"""Discord Components V2 message builders.
+"""Discord Components V2 message builders for discord.py 2.7.1.
 
-All public commands use these helpers instead of discord.Embed so that
-messages get dividers, thumbnails, accent colours and other V2 layout
-features. Call `send()` / `edit()` instead of ctx.send(embed=...).
+Correct API signatures (verified against discord.py 2.7.1 source):
+  Container(*children, accent_colour=None, accent_color=None, spoiler=False, id=None)
+  Section(*children, accessory, id=None)          -- accessory is REQUIRED
+  TextDisplay(content, *, id=None)
+  Separator(*, visible=True, spacing=SeparatorSpacing.small, id=None)
+  Thumbnail(media, *, description=None, spoiler=False, id=None)
 """
 from __future__ import annotations
 
@@ -12,7 +15,7 @@ import discord
 
 from .config import settings
 
-# Message flag that tells Discord to treat components as V2 layout.
+# Message flag that tells Discord to render as Components V2 layout.
 _V2_FLAGS = discord.MessageFlags(components_v2=True)
 
 # ---------------------------------------------------------------------------
@@ -39,18 +42,23 @@ def _text(content: str) -> discord.ui.TextDisplay:
 
 def _sep(large: bool = False) -> discord.ui.Separator:
     spacing = discord.SeparatorSpacing.large if large else discord.SeparatorSpacing.small
-    return discord.ui.Separator(spacing=spacing, divider=True)
+    return discord.ui.Separator(spacing=spacing)
 
 
 def _thumb(url: str) -> discord.ui.Thumbnail:
-    return discord.ui.Thumbnail(media=url)
+    return discord.ui.Thumbnail(url)
 
 
-def _section(content: str, thumbnail_url: str | None = None) -> discord.ui.Section:
-    txt = _text(content)
+def _header_item(
+    header_md: str,
+    thumbnail_url: str | None = None,
+) -> discord.ui.Item:
+    """Return a Section (with thumbnail) or plain TextDisplay (without)."""
+    txt = _text(header_md)
     if thumbnail_url:
-        return discord.ui.Section(components=[txt], accessory=_thumb(thumbnail_url))
-    return discord.ui.Section(components=[txt])
+        # Section requires accessory= — pass the thumbnail there.
+        return discord.ui.Section(txt, accessory=_thumb(thumbnail_url))
+    return txt
 
 
 # ---------------------------------------------------------------------------
@@ -70,40 +78,40 @@ def build(
 
     Parameters
     ----------
-    style:         "info" | "success" | "warn" | "danger"
-    title:         Bold heading text (## heading)
-    body:          Optional subtitle text shown under the heading
-    fields:        List of (label, value) pairs shown as a field block
-    thumbnail_url: Small thumbnail shown beside the title section
-    footer:        Small grey text line at the bottom
+    style:          "info" | "success" | "warn" | "danger"
+    title:          Bold heading text
+    body:           Optional subtitle shown under the heading
+    fields:         List of (label, value) pairs
+    thumbnail_url:  Small image beside the title
+    footer:         Small grey text at the bottom
     extra_sections: Additional (content, optional_thumbnail_url) pairs
     """
-    c = discord.ui.Container(accent_colour=_col(style))
+    items: list[discord.ui.Item] = []
 
-    # ---- header section (title + optional thumbnail) ----
+    # ---- header ----
     header_md = f"## {title}"
     if body:
         header_md += f"\n{body}"
-    c.add_item(_section(header_md, thumbnail_url))
+    items.append(_header_item(header_md, thumbnail_url))
 
     # ---- fields block ----
     if fields:
-        c.add_item(_sep())
+        items.append(_sep())
         field_lines = "\n".join(f"**{k}** · {v}" for k, v in fields)
-        c.add_item(_text(field_lines))
+        items.append(_text(field_lines))
 
     # ---- extra sections ----
     if extra_sections:
         for content, thumb in extra_sections:
-            c.add_item(_sep())
-            c.add_item(_section(content, thumb))
+            items.append(_sep())
+            items.append(_header_item(content, thumb))
 
     # ---- footer ----
     if footer:
-        c.add_item(_sep())
-        c.add_item(_text(f"-# {footer}"))
+        items.append(_sep())
+        items.append(_text(f"-# {footer}"))
 
-    return c
+    return discord.ui.Container(*items, accent_colour=_col(style))
 
 
 # ---------------------------------------------------------------------------
@@ -138,9 +146,9 @@ def mod_action(
     extra_fields: list[tuple[str, str]] | None = None,
 ) -> discord.ui.Container:
     fields: list[tuple[str, str]] = [
-        ("Target", f"{target.mention} `{target}`"),
+        ("Target",    f"{target.mention} `{target}`"),
         ("Moderator", moderator.mention),
-        ("Reason", reason or "No reason provided"),
+        ("Reason",    reason or "No reason provided"),
     ]
     if extra_fields:
         fields.extend(extra_fields)
