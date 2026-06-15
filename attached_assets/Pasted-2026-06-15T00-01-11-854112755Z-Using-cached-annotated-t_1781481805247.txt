@@ -1,0 +1,76 @@
+2026-06-15T00:01:11.854112755Z Using cached annotated_types-0.7.0-py3-none-any.whl (13 kB)
+2026-06-15T00:01:11.855172975Z Using cached attrs-26.1.0-py3-none-any.whl (67 kB)
+2026-06-15T00:01:11.856268707Z Using cached frozenlist-1.8.0-cp314-cp314-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (231 kB)
+2026-06-15T00:01:11.85747893Z Using cached h11-0.16.0-py3-none-any.whl (37 kB)
+2026-06-15T00:01:11.858548951Z Using cached idna-3.18-py3-none-any.whl (65 kB)
+2026-06-15T00:01:11.859664084Z Using cached propcache-0.5.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (61 kB)
+2026-06-15T00:01:11.860755525Z Using cached tqdm-4.68.2-py3-none-any.whl (78 kB)
+2026-06-15T00:01:11.861841446Z Using cached typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+2026-06-15T00:01:11.862900627Z Using cached audioop_lts-0.2.2-cp313-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (85 kB)
+2026-06-15T00:01:11.864048849Z Using cached certifi-2026.5.20-py3-none-any.whl (134 kB)
+2026-06-15T00:01:11.865181021Z Using cached sniffio-1.3.1-py3-none-any.whl (10 kB)
+2026-06-15T00:01:11.949123076Z Installing collected packages: typing-extensions, tqdm, sniffio, python-dotenv, propcache, multidict, jiter, idna, h11, frozenlist, distro, certifi, audioop-lts, attrs, annotated-types, aiohappyeyeballs, yarl, typing-inspection, pydantic-core, httpcore, anyio, aiosignal, pydantic, httpx, aiohttp, openai, discord.py
+2026-06-15T00:01:15.609398638Z 
+2026-06-15T00:01:15.612833055Z Successfully installed aiohappyeyeballs-2.6.2 aiohttp-3.14.1 aiosignal-1.4.0 annotated-types-0.7.0 anyio-4.13.0 attrs-26.1.0 audioop-lts-0.2.2 certifi-2026.5.20 discord.py-2.7.1 distro-1.9.0 frozenlist-1.8.0 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.18 jiter-0.15.0 multidict-6.7.1 openai-2.41.1 propcache-0.5.2 pydantic-2.13.4 pydantic-core-2.46.4 python-dotenv-1.2.2 sniffio-1.3.1 tqdm-4.68.2 typing-extensions-4.15.0 typing-inspection-0.4.2 yarl-1.24.2
+2026-06-15T00:01:15.618655729Z 
+2026-06-15T00:01:15.61866916Z [notice] A new release of pip is available: 25.3 -> 26.1.2
+2026-06-15T00:01:15.61867601Z [notice] To update, run: pip install --upgrade pip
+2026-06-15T00:01:17.72234639Z ==> Uploading build...
+2026-06-15T00:01:22.013443851Z ==> Uploaded in 2.1s. Compression took 2.2s
+2026-06-15T00:01:22.555625425Z ==> Build successful 🎉
+2026-06-15T00:01:27.8228458Z ==> Deploying...
+2026-06-15T00:01:28.00331845Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-06-15T00:01:38.829890735Z ==> Running 'python bot/york.py'
+2026-06-15T00:01:50.933599847Z DATA_DIR /data is not writable, trying fallback…
+2026-06-15T00:01:51.422045255Z 2026-06-15 00:01:51,421 | WARNING | york | OPENAI_API_KEY missing — AI conversation will be disabled.
+2026-06-15T00:01:51.422441615Z 2026-06-15 00:01:51,422 | INFO    | york.keepalive | Keep-alive server listening on http://0.0.0.0:10000
+2026-06-15T00:01:51.422780413Z 2026-06-15 00:01:51,422 | WARNING | discord.client | PyNaCl is not installed, voice will NOT be supported
+2026-06-15T00:01:51.422790353Z 2026-06-15 00:01:51,422 | WARNING | discord.client | davey is not installed, voice will NOT be supported
+2026-06-15T00:01:51.423019089Z 2026-06-15 00:01:51,422 | INFO    | discord.client | logging in using static token
+2026-06-15T00:01:51.975818153Z 2026-06-15 00:01:51,972 | INFO    | aiohttp.access | 127.0.0.1 [15/Jun/2026:00:01:51 +0000] "HEAD / HTTP/1.1" 200 153 "-" "Go-http-client/1.1"
+2026-06-15T00:01:59.085231883Z ==> Your service is live 🎉
+2026-06-15T00:01:59.273226861Z ==> 
+2026-06-15T00:01:59.27596278Z ==> ///////////////////////////////////////////////////////////
+2026-06-15T00:01:59.278616258Z ==> 
+2026-06-15T00:01:59.280920439Z ==> Available at your primary URL https://york-ai-assistant-1.onrender.com
+2026-06-15T00:01:59.284012555Z ==> 
+2026-06-15T00:01:59.286432138Z ==> ///////////////////////////////////////////////////////////
+2026-06-15T00:02:02.617687461Z 2026-06-15 00:02:02,617 | INFO    | york | Loaded extension: york.cogs.conversation
+2026-06-15T00:02:02.719998878Z 2026-06-15 00:02:02,719 | INFO    | york | Loaded extension: york.cogs.moderation
+2026-06-15T00:02:02.726313883Z 2026-06-15 00:02:02,726 | INFO    | york | Loaded extension: york.cogs.insights
+2026-06-15T00:02:02.816045251Z 2026-06-15 00:02:02,815 | INFO    | york | Loaded extension: york.cogs.fun
+2026-06-15T00:02:02.91967797Z 2026-06-15 00:02:02,919 | INFO    | york | Loaded extension: york.cogs.economy
+2026-06-15T00:02:02.923821482Z 2026-06-15 00:02:02,923 | INFO    | york | Loaded extension: york.cogs.fishing
+2026-06-15T00:02:02.930129736Z 2026-06-15 00:02:02,929 | INFO    | york | Loaded extension: york.cogs.starboard
+2026-06-15T00:02:03.031147602Z 2026-06-15 00:02:03,030 | INFO    | york | Loaded extension: york.cogs.proactive
+2026-06-15T00:02:03.033310995Z 2026-06-15 00:02:03,033 | INFO    | york | Loaded extension: york.cogs.help_cog
+2026-06-15T00:02:03.116061842Z 2026-06-15 00:02:03,115 | INFO    | aiohttp.access | 127.0.0.1 [15/Jun/2026:00:02:03 +0000] "GET / HTTP/1.1" 200 168 "-" "Go-http-client/2.0"
+2026-06-15T00:02:03.465821152Z 2026-06-15 00:02:03,465 | INFO    | york | Synced 48 slash commands
+2026-06-15T00:02:03.809241456Z 2026-06-15 00:02:03,809 | INFO    | discord.gateway | Shard ID None has connected to Gateway (Session ID: 9f575411029c8cba2600d699f80ccdd4).
+2026-06-15T00:02:06.430607983Z 2026-06-15 00:02:06,430 | INFO    | york | York online as York#2771 (id=1496154816206864434)
+2026-06-15T00:03:05.003319967Z 2026-06-15 00:03:05,003 | INFO    | httpx | HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-06-15T00:03:05.004129887Z 2026-06-15 00:03:05,003 | INFO    | openai._base_client | Retrying request to /chat/completions in 0.437214 seconds
+2026-06-15T00:03:05.504964889Z 2026-06-15 00:03:05,504 | INFO    | httpx | HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-06-15T00:03:05.505710807Z 2026-06-15 00:03:05,505 | INFO    | openai._base_client | Retrying request to /chat/completions in 0.873645 seconds
+2026-06-15T00:03:06.442393028Z 2026-06-15 00:03:06,442 | INFO    | httpx | HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 429 Too Many Requests"
+2026-06-15T00:03:06.445841152Z 2026-06-15 00:03:06,443 | ERROR   | york.ai | AI call failed: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\nPlease retry in 53.5655075s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '53s'}]}}]
+2026-06-15T00:03:06.445869083Z Traceback (most recent call last):
+2026-06-15T00:03:06.445875153Z   File "/opt/render/project/src/bot/york/ai.py", line 148, in chat
+2026-06-15T00:03:06.445878653Z     resp = await c.chat.completions.create(
+2026-06-15T00:03:06.445882244Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-15T00:03:06.445886093Z     ...<3 lines>...
+2026-06-15T00:03:06.445889344Z     )
+2026-06-15T00:03:06.445892424Z     ^
+2026-06-15T00:03:06.445897614Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/openai/resources/chat/completions/completions.py", line 2814, in create
+2026-06-15T00:03:06.445902264Z     return await self._post(
+2026-06-15T00:03:06.445904234Z            ^^^^^^^^^^^^^^^^^
+2026-06-15T00:03:06.445906254Z     ...<54 lines>...
+2026-06-15T00:03:06.445908184Z     )
+2026-06-15T00:03:06.445910114Z     ^
+2026-06-15T00:03:06.445912954Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/openai/_base_client.py", line 1931, in post
+2026-06-15T00:03:06.445916274Z     return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+2026-06-15T00:03:06.445918324Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-15T00:03:06.445921534Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/openai/_base_client.py", line 1716, in request
+2026-06-15T00:03:06.445923705Z     raise self._make_status_error_from_response(err.response) from None
+2026-06-15T00:03:06.445937045Z openai.RateLimitError: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\nPlease retry in 53.5655075s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '53s'}]}}]
+2026-06-15T00:03:15.910745597Z 2026-06-15 00:03:15,910 | INFO    | aiohttp.access | 127.0.0.1 [15/Jun/2026:00:03:15 +0000] "HEAD / HTTP/1.1" 200 153 "https://york-ai-assistant-1.onrender.com" "Mozilla/5.0+(compatible; UptimeRobot/2.0; http://www.uptimerobot.com/)"
