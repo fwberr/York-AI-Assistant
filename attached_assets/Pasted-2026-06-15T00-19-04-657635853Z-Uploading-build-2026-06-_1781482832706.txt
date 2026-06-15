@@ -1,0 +1,50 @@
+2026-06-15T00:19:04.657635853Z ==> Uploading build...
+2026-06-15T00:19:08.879103831Z ==> Uploaded in 2.1s. Compression took 2.1s
+2026-06-15T00:19:08.953169217Z ==> Build successful 🎉
+2026-06-15T00:19:13.828689463Z ==> Deploying...
+2026-06-15T00:19:14.016504074Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-06-15T00:19:24.13101779Z ==> Running 'python bot/york.py'
+2026-06-15T00:19:34.127119109Z DATA_DIR /data is not writable, trying fallback…
+2026-06-15T00:19:35.41374151Z 2026-06-15 00:19:35,413 | WARNING | york | OPENAI_API_KEY missing — AI conversation will be disabled.
+2026-06-15T00:19:35.413793691Z 2026-06-15 00:19:35,413 | INFO    | york.keepalive | Keep-alive server listening on http://0.0.0.0:10000
+2026-06-15T00:19:35.415579232Z 2026-06-15 00:19:35,414 | WARNING | discord.client | PyNaCl is not installed, voice will NOT be supported
+2026-06-15T00:19:35.415591442Z 2026-06-15 00:19:35,414 | WARNING | discord.client | davey is not installed, voice will NOT be supported
+2026-06-15T00:19:35.415595102Z 2026-06-15 00:19:35,414 | INFO    | discord.client | logging in using static token
+2026-06-15T00:19:35.522959344Z 2026-06-15 00:19:35,522 | INFO    | aiohttp.access | 127.0.0.1 [15/Jun/2026:00:19:35 +0000] "HEAD / HTTP/1.1" 200 153 "-" "Go-http-client/1.1"
+2026-06-15T00:19:43.919418457Z 2026-06-15 00:19:43,917 | INFO    | york | Loaded extension: york.cogs.conversation
+2026-06-15T00:19:44.0205681Z 2026-06-15 00:19:44,019 | INFO    | york | Loaded extension: york.cogs.moderation
+2026-06-15T00:19:44.031833437Z 2026-06-15 00:19:44,031 | INFO    | york | Loaded extension: york.cogs.insights
+2026-06-15T00:19:44.120026064Z 2026-06-15 00:19:44,119 | INFO    | york | Loaded extension: york.cogs.fun
+2026-06-15T00:19:44.222682114Z 2026-06-15 00:19:44,221 | INFO    | york | Loaded extension: york.cogs.economy
+2026-06-15T00:19:44.230436759Z 2026-06-15 00:19:44,230 | INFO    | york | Loaded extension: york.cogs.fishing
+2026-06-15T00:19:44.320816495Z 2026-06-15 00:19:44,320 | INFO    | york | Loaded extension: york.cogs.starboard
+2026-06-15T00:19:44.327210456Z 2026-06-15 00:19:44,327 | INFO    | york | Loaded extension: york.cogs.proactive
+2026-06-15T00:19:44.332919246Z 2026-06-15 00:19:44,332 | INFO    | york | Loaded extension: york.cogs.help_cog
+2026-06-15T00:19:45.099286796Z ==> Your service is live 🎉
+2026-06-15T00:19:45.211796468Z 2026-06-15 00:19:45,211 | INFO    | aiohttp.access | 127.0.0.1 [15/Jun/2026:00:19:45 +0000] "GET / HTTP/1.1" 200 168 "-" "Go-http-client/2.0"
+2026-06-15T00:19:45.310276529Z ==> 
+2026-06-15T00:19:45.312843602Z ==> ///////////////////////////////////////////////////////////
+2026-06-15T00:19:45.315155479Z ==> 
+2026-06-15T00:19:45.317744083Z ==> Available at your primary URL https://york-ai-assistant-1.onrender.com
+2026-06-15T00:19:45.320384661Z ==> 
+2026-06-15T00:19:45.32257472Z ==> ///////////////////////////////////////////////////////////
+2026-06-15T00:19:45.412796932Z 2026-06-15 00:19:45,412 | INFO    | aiohttp.access | 127.0.0.1 [15/Jun/2026:00:19:45 +0000] "GET / HTTP/1.1" 200 168 "-" "Mozilla/5.0 (compatible)"
+2026-06-15T00:19:45.988830635Z 2026-06-15 00:19:45,988 | INFO    | york | Synced 48 slash commands
+2026-06-15T00:19:46.460142562Z 2026-06-15 00:19:46,459 | INFO    | discord.gateway | Shard ID None has connected to Gateway (Session ID: 3668402e369674a8ec512574e2b30d2e).
+2026-06-15T00:19:48.922715924Z 2026-06-15 00:19:48,922 | INFO    | york | York online as York#2771 (id=1496154816206864434)
+2026-06-15T00:20:00.164792161Z 2026-06-15 00:20:00,163 | ERROR   | york.ai | AI call failed: Gemini 429: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+2026-06-15T00:20:00.164825801Z * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+2026-06-15T00:20:00.164830711Z * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+2026-06-15T00:20:00.164835451Z * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash
+2026-06-15T00:20:00.164840262Z Please retry in 59.843618054s.
+2026-06-15T00:20:00.164845642Z Traceback (most recent call last):
+2026-06-15T00:20:00.164850212Z   File "/opt/render/project/src/bot/york/ai.py", line 179, in chat
+2026-06-15T00:20:00.164855152Z     return await _gemini_chat(messages, settings.ai_model, 600)
+2026-06-15T00:20:00.164877212Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-15T00:20:00.164880782Z   File "/opt/render/project/src/bot/york/ai.py", line 74, in _gemini_chat
+2026-06-15T00:20:00.164883882Z     raise RuntimeError(f"Gemini {resp.status}: {err}")
+2026-06-15T00:20:00.164887472Z RuntimeError: Gemini 429: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+2026-06-15T00:20:00.164890692Z * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+2026-06-15T00:20:00.164893803Z * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash
+2026-06-15T00:20:00.164896503Z * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash
+2026-06-15T00:20:00.164899423Z Please retry in 59.843618054s.
