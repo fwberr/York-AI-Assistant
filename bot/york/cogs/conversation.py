@@ -12,7 +12,7 @@ from discord.ext import commands
 
 from .. import ai, embeds
 from ..config import settings
-from .fun import fetch_gif, fetch_image, GIF_CATEGORIES
+from .fun import fetch_gif, fetch_gif_search, fetch_image, GIF_CATEGORIES
 
 log = logging.getLogger("york.conversation")
 
@@ -66,9 +66,13 @@ async def _extract_media(text: str) -> Tuple[str, list[str]]:
     for t in _GIF_TOKEN.findall(text)[:2]:
         action = _resolve_gif_action(t)
         if action:
+            # Known reaction category → nekos.best (anime style)
             u = await fetch_gif(action)
-            if u:
-                urls.append(u)
+        else:
+            # Anything else (character name, custom query) → Tenor search
+            u = await fetch_gif_search(t.strip())
+        if u:
+            urls.append(u)
     for q in _IMG_TOKEN.findall(text)[:2]:
         u = await fetch_image(q)
         if u:

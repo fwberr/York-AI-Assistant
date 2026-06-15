@@ -94,6 +94,33 @@ async def fetch_gif(action: str) -> str | None:
 _fetch_gif = fetch_gif
 
 
+async def fetch_gif_search(query: str) -> str | None:
+    """Search Tenor for any GIF by keyword (character names, scenes, etc.)."""
+    q = (query or "").strip()
+    if not q:
+        return None
+    url = "https://g.tenor.com/v1/search"
+    params = {"q": q, "key": "LIVDSRZULELA", "limit": 8, "contentfilter": "low"}
+    try:
+        async with aiohttp.ClientSession() as s:
+            async with s.get(url, params=params, timeout=aiohttp.ClientTimeout(total=6)) as r:
+                if r.status != 200:
+                    return None
+                data = await r.json()
+                results = data.get("results") or []
+                if not results:
+                    return None
+                pick = random.choice(results[:8])
+                media = pick.get("media", [{}])[0]
+                return (
+                    media.get("gif", {}).get("url")
+                    or media.get("mediumgif", {}).get("url")
+                    or media.get("tinygif", {}).get("url")
+                )
+    except Exception:
+        return None
+
+
 async def fetch_image(query: str) -> str | None:
     q = (query or "").strip()
     if not q:
