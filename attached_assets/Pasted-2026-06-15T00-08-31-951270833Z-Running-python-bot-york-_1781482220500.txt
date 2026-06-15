@@ -1,0 +1,50 @@
+2026-06-15T00:08:31.951270833Z ==> Running 'python bot/york.py'
+2026-06-15T00:08:44.744805593Z DATA_DIR /data is not writable, trying fallback…
+2026-06-15T00:08:45.246213761Z 2026-06-15 00:08:45,245 | WARNING | york | OPENAI_API_KEY missing — AI conversation will be disabled.
+2026-06-15T00:08:45.246589789Z 2026-06-15 00:08:45,246 | INFO    | york.keepalive | Keep-alive server listening on http://0.0.0.0:10000
+2026-06-15T00:08:45.246978097Z 2026-06-15 00:08:45,246 | WARNING | discord.client | PyNaCl is not installed, voice will NOT be supported
+2026-06-15T00:08:45.246983497Z 2026-06-15 00:08:45,246 | WARNING | discord.client | davey is not installed, voice will NOT be supported
+2026-06-15T00:08:45.247241372Z 2026-06-15 00:08:45,247 | INFO    | discord.client | logging in using static token
+2026-06-15T00:08:45.647229676Z 2026-06-15 00:08:45,647 | INFO    | aiohttp.access | 127.0.0.1 [15/Jun/2026:00:08:45 +0000] "HEAD / HTTP/1.1" 200 153 "-" "Go-http-client/1.1"
+2026-06-15T00:08:52.588839194Z ==> Your service is live 🎉
+2026-06-15T00:08:52.769370684Z ==> 
+2026-06-15T00:08:52.771689371Z ==> ///////////////////////////////////////////////////////////
+2026-06-15T00:08:52.774745495Z ==> 
+2026-06-15T00:08:52.777300047Z ==> Available at your primary URL https://york-ai-assistant-1.onrender.com
+2026-06-15T00:08:52.779266922Z ==> 
+2026-06-15T00:08:52.781557808Z ==> ///////////////////////////////////////////////////////////
+2026-06-15T00:08:53.840257627Z 2026-06-15 00:08:53,839 | INFO    | york | Loaded extension: york.cogs.conversation
+2026-06-15T00:08:53.853784737Z 2026-06-15 00:08:53,853 | INFO    | york | Loaded extension: york.cogs.moderation
+2026-06-15T00:08:53.946230952Z 2026-06-15 00:08:53,946 | INFO    | york | Loaded extension: york.cogs.insights
+2026-06-15T00:08:53.952507347Z 2026-06-15 00:08:53,952 | INFO    | york | Loaded extension: york.cogs.fun
+2026-06-15T00:08:54.142268565Z 2026-06-15 00:08:54,142 | INFO    | york | Loaded extension: york.cogs.economy
+2026-06-15T00:08:54.145946888Z 2026-06-15 00:08:54,145 | INFO    | york | Loaded extension: york.cogs.fishing
+2026-06-15T00:08:54.151622132Z 2026-06-15 00:08:54,151 | INFO    | york | Loaded extension: york.cogs.starboard
+2026-06-15T00:08:54.250667589Z 2026-06-15 00:08:54,250 | INFO    | york | Loaded extension: york.cogs.proactive
+2026-06-15T00:08:54.253055966Z 2026-06-15 00:08:54,252 | INFO    | york | Loaded extension: york.cogs.help_cog
+2026-06-15T00:08:54.255549056Z 2026-06-15 00:08:54,255 | INFO    | aiohttp.access | 127.0.0.1 [15/Jun/2026:00:08:54 +0000] "GET / HTTP/1.1" 200 168 "-" "Go-http-client/2.0"
+2026-06-15T00:08:54.715317734Z 2026-06-15 00:08:54,714 | INFO    | york | Synced 48 slash commands
+2026-06-15T00:08:55.094043253Z 2026-06-15 00:08:55,093 | INFO    | discord.gateway | Shard ID None has connected to Gateway (Session ID: 70c896682d4a431879e88b3e03fa488a).
+2026-06-15T00:08:57.753349176Z 2026-06-15 00:08:57,753 | INFO    | york | York online as York#2771 (id=1496154816206864434)
+2026-06-15T00:09:05.307743349Z 2026-06-15 00:09:05,307 | INFO    | aiohttp.access | 127.0.0.1 [15/Jun/2026:00:09:05 +0000] "GET / HTTP/1.1" 200 168 "-" "Mozilla/5.0 (compatible)"
+2026-06-15T00:09:31.814630305Z 2026-06-15 00:09:31,814 | INFO    | httpx | HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/openai/chat/completions "HTTP/1.1 404 Not Found"
+2026-06-15T00:09:31.818472632Z 2026-06-15 00:09:31,815 | ERROR   | york.ai | AI call failed: Error code: 404 - [{'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1main, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}]
+2026-06-15T00:09:31.818495432Z Traceback (most recent call last):
+2026-06-15T00:09:31.818502512Z   File "/opt/render/project/src/bot/york/ai.py", line 148, in chat
+2026-06-15T00:09:31.818507103Z     resp = await c.chat.completions.create(
+2026-06-15T00:09:31.818511113Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-15T00:09:31.818515753Z     ...<3 lines>...
+2026-06-15T00:09:31.818520053Z     )
+2026-06-15T00:09:31.818524783Z     ^
+2026-06-15T00:09:31.818530363Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/openai/resources/chat/completions/completions.py", line 2814, in create
+2026-06-15T00:09:31.818548793Z     return await self._post(
+2026-06-15T00:09:31.818552173Z            ^^^^^^^^^^^^^^^^^
+2026-06-15T00:09:31.818555044Z     ...<54 lines>...
+2026-06-15T00:09:31.818557853Z     )
+2026-06-15T00:09:31.818560854Z     ^
+2026-06-15T00:09:31.818564354Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/openai/_base_client.py", line 1931, in post
+2026-06-15T00:09:31.818568824Z     return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+2026-06-15T00:09:31.818571744Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-06-15T00:09:31.818576004Z   File "/opt/render/project/src/.venv/lib/python3.14/site-packages/openai/_base_client.py", line 1716, in request
+2026-06-15T00:09:31.818578944Z     raise self._make_status_error_from_response(err.response) from None
+2026-06-15T00:09:31.818582874Z openai.NotFoundError: Error code: 404 - [{'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1main, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}]

@@ -31,7 +31,7 @@ def _resolve_ai_provider() -> tuple[str, str, str]:
         # Gemini: free tier, 1500 req/day, works from all cloud hosts.
         key   = gemini_key
         url   = custom_url or "https://generativelanguage.googleapis.com/v1beta/openai/"
-        model = custom_mdl or "gemini-1.5-flash"
+        model = custom_mdl or "gemini-2.0-flash"
     elif groq_key:
         key   = groq_key
         url   = custom_url or "https://api.groq.com/openai/v1"
