@@ -19,16 +19,22 @@ def _resolve_ai_provider() -> tuple[str, str, str]:
     YORK_MODEL always overrides the default model if set.
     YORK_BASE_URL always overrides the base URL if set.
     """
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
-    groq_key   = os.getenv("GROQ_API_KEY", "")
-    proxy_key  = os.getenv("AI_INTEGRATIONS_OPENAI_API_KEY", "")
-    proxy_url  = os.getenv("AI_INTEGRATIONS_OPENAI_BASE_URL", "")
-    openai_key = os.getenv("OPENAI_API_KEY", "")
-    custom_url = os.getenv("YORK_BASE_URL", "")
-    custom_mdl = os.getenv("YORK_MODEL", "")
+    mistral_key = os.getenv("MISTRAL_API_KEY", "")
+    gemini_key  = os.getenv("GEMINI_API_KEY", "")
+    groq_key    = os.getenv("GROQ_API_KEY", "")
+    proxy_key   = os.getenv("AI_INTEGRATIONS_OPENAI_API_KEY", "")
+    proxy_url   = os.getenv("AI_INTEGRATIONS_OPENAI_BASE_URL", "")
+    openai_key  = os.getenv("OPENAI_API_KEY", "")
+    custom_url  = os.getenv("YORK_BASE_URL", "")
+    custom_mdl  = os.getenv("YORK_MODEL", "")
 
-    if gemini_key:
-        # Gemini: free tier, 1500 req/day, works from all cloud hosts.
+    if mistral_key:
+        # Mistral: free tier, OpenAI-compatible, works from cloud hosting.
+        key   = mistral_key
+        url   = custom_url or "https://api.mistral.ai/v1"
+        model = custom_mdl or "mistral-small-latest"
+    elif gemini_key:
+        # Gemini native REST API (via aiohttp in ai.py).
         key   = gemini_key
         url   = custom_url or "https://generativelanguage.googleapis.com/v1beta/openai/"
         model = custom_mdl or "gemini-2.0-flash"

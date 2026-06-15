@@ -171,7 +171,7 @@ async def chat(messages: List[dict]) -> str:
     if not settings.ai_key:
         return (
             "My AI module is currently offline. "
-            "Set GEMINI_API_KEY in your environment variables."
+            "Set MISTRAL_API_KEY in your environment variables."
         )
     try:
         # Gemini: native REST API via aiohttp — no OpenAI compat layer.
