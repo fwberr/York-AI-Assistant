@@ -41,15 +41,32 @@ def _has_name(text: str) -> bool:
     return _NAME_REF.search(text) is not None
 
 
-_GIF_TOKEN = re.compile(r"\[gif:([a-zA-Z]+)\]")
+_GIF_TOKEN = re.compile(r"\[gif:([^\]\n]{1,60})\]")
 _IMG_TOKEN = re.compile(r"\[img:([^\]\n]{1,80})\]")
+
+
+def _resolve_gif_action(token: str) -> str | None:
+    """Return a valid GIF category from a token that may be multi-word.
+
+    e.g. 'astolfo wink' → 'wink', 'hug' → 'hug', 'pet' → 'pat'
+    """
+    token = token.strip().lower()
+    alias = {"pet": "pat"}
+    # Try full token first, then each word right-to-left
+    candidates = [token] + list(reversed(token.split()))
+    for c in candidates:
+        c = alias.get(c, c)
+        if c in GIF_CATEGORIES:
+            return c
+    return None
 
 
 async def _extract_media(text: str) -> Tuple[str, list[str]]:
     urls: list[str] = []
     for t in _GIF_TOKEN.findall(text)[:2]:
-        if t.lower() in GIF_CATEGORIES or t.lower() == "pet":
-            u = await fetch_gif(t)
+        action = _resolve_gif_action(t)
+        if action:
+            u = await fetch_gif(action)
             if u:
                 urls.append(u)
     for q in _IMG_TOKEN.findall(text)[:2]:
