@@ -1,15 +1,12 @@
-"""OpenAI-compatible AI brain for York.
+"""AI brain for York.
 
-Primary provider: Google Gemini 2.0 Flash (GEMINI_API_KEY).
-Fallback: Groq, Replit proxy, OpenAI (see config.py for priority order).
-
-Groq note: Render datacenter IPs are blocked by Groq at the network level.
-Groq requests use aiohttp directly to bypass the openai SDK / httpx stack,
-but this only matters if GEMINI_API_KEY is absent and GROQ_API_KEY is set.
+Primary provider: Google Gemini 2.0 Flash (GEMINI_API_KEY) — called via
+the native Gemini REST API directly with aiohttp (no OpenAI SDK layer).
+Fallback: Groq (aiohttp, Render IPs are blocked by Groq's SDK path),
+then Replit proxy / OpenAI via the OpenAI SDK.
 """
 from __future__ import annotations
 
-import json
 import logging
 import re
 from typing import List
@@ -34,9 +31,50 @@ _AIOHTTP_HEADERS = {
 }
 
 
+def _is_gemini() -> bool:
+    return "googleapis.com" in (settings.ai_url or "")
+
+
 def _is_groq() -> bool:
     return "groq.com" in (settings.ai_url or "")
 
+
+async def _gemini_chat(messages: List[dict], model: str, max_tokens: int) -> str:
+    """Call Gemini native REST API directly — avoids the OpenAI compat layer."""
+    # Split system message from conversation turns
+    system_text = ""
+    contents = []
+    for m in messages:
+        role = m.get("role", "")
+        text = m.get("content", "")
+        if role == "system":
+            system_text = text
+        elif role == "assistant":
+            contents.append({"role": "model", "parts": [{"text": text}]})
+        else:
+            contents.append({"role": "user", "parts": [{"text": text}]})
+
+    payload: dict = {
+        "contents": contents,
+        "generationConfig": {"maxOutputTokens": max_tokens},
+    }
+    if system_text:
+        payload["system_instruction"] = {"parts": [{"text": system_text}]}
+
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models"
+        f"/{model}:generateContent?key={settings.ai_key}"
+    )
+    timeout = aiohttp.ClientTimeout(total=30)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        async with session.post(url, json=payload) as resp:
+            data = await resp.json(content_type=None)
+            if resp.status != 200:
+                err = data.get("error", {}).get("message", str(data))
+                raise RuntimeError(f"Gemini {resp.status}: {err}")
+            return (
+                data["candidates"][0]["content"]["parts"][0]["text"] or ""
+            ).strip()
 
 
 async def _groq_chat(messages: List[dict], model: str, max_tokens: int) -> str:
@@ -55,8 +93,8 @@ async def _groq_chat(messages: List[dict], model: str, max_tokens: int) -> str:
 
 def client() -> AsyncOpenAI | None:
     global _client
-    if _is_groq():
-        return None  # Groq uses aiohttp path instead
+    if _is_gemini() or _is_groq():
+        return None  # These use aiohttp paths instead
     key = settings.ai_key
     if not key:
         return None
@@ -136,12 +174,15 @@ async def chat(messages: List[dict]) -> str:
             "Set GEMINI_API_KEY in your environment variables."
         )
     try:
-        # Groq: use aiohttp directly to avoid the httpx fingerprint that
-        # causes 403 "Access denied" errors on cloud-hosted environments.
+        # Gemini: native REST API via aiohttp — no OpenAI compat layer.
+        if _is_gemini():
+            return await _gemini_chat(messages, settings.ai_model, 600)
+
+        # Groq: aiohttp directly to avoid 403 on cloud-hosted environments.
         if _is_groq():
             return await _groq_chat(messages, settings.ai_model, 600)
 
-        # OpenAI / other providers: use the SDK as normal.
+        # OpenAI / other providers: use the SDK.
         c = client()
         if c is None:
             return "My AI module is currently offline."
