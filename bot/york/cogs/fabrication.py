@@ -73,83 +73,54 @@ def _schematic_prompt(description: str, angle: str = "isometric 3D view") -> str
 
 
 # ---------------------------------------------------------------------------
-# Image generation — Prodia (primary, free API key) + Craiyon v3 (fallback)
+# Image generation — Cloudflare Workers AI (primary) + Craiyon v3 (fallback)
+#
+# Cloudflare free tier: 10,000 neurons/day, no credit card required.
+# Flux-1-Schnell costs ~38 neurons per 512×512 image → ~260 free images/day.
+#
+# Setup (free, 2 minutes):
+#   1. Create a free account at cloudflare.com
+#   2. Grab your Account ID from the Cloudflare dashboard home page
+#   3. Go to My Profile → API Tokens → Create Token → use "Workers AI" template
+#   4. Add CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN as bot secrets
 # ---------------------------------------------------------------------------
 
-# ── Prodia ──────────────────────────────────────────────────────────────────
-_PRODIA_GENERATE_URL = "https://api.prodia.com/v1/sd/generate"
-_PRODIA_JOB_URL      = "https://api.prodia.com/v1/job/{job_id}"
-_PRODIA_KEY          = os.environ.get("PRODIA_API_KEY", "")
+# ── Cloudflare Workers AI ────────────────────────────────────────────────────
+_CF_ACCOUNT_ID = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
+_CF_API_TOKEN  = os.environ.get("CLOUDFLARE_API_TOKEN", "")
+_CF_MODEL      = "@cf/black-forest-labs/flux-1-schnell"
 
 
-async def _generate_via_prodia(prompt: str) -> discord.File | None:
-    """Generate an image using the Prodia API (requires PRODIA_API_KEY)."""
+async def _generate_via_cloudflare(prompt: str) -> discord.File | None:
+    """Generate an image using Cloudflare Workers AI (Flux-1-Schnell)."""
+    url = (
+        f"https://api.cloudflare.com/client/v4/accounts"
+        f"/{_CF_ACCOUNT_ID}/ai/run/{_CF_MODEL}"
+    )
     headers = {
-        "X-Prodia-Key": _PRODIA_KEY,
-        "accept":       "application/json",
-        "content-type": "application/json",
+        "Authorization": f"Bearer {_CF_API_TOKEN}",
+        "Content-Type":  "application/json",
     }
-    payload = {
-        "model":           "dreamshaper_8.safetensors",
-        "prompt":          prompt,
-        "negative_prompt": "blurry, ugly, low quality, watermark, text, signature",
-        "steps":           25,
-        "cfg_scale":       7,
-        "seed":            -1,
-        "sampler":         "DPM++ 2M Karras",
-        "width":           512,
-        "height":          512,
-    }
+    payload = {"prompt": prompt, "num_steps": 4}
+
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                _PRODIA_GENERATE_URL,
+                url,
                 json=payload,
                 headers=headers,
-                timeout=aiohttp.ClientTimeout(total=30),
+                timeout=aiohttp.ClientTimeout(total=60),
             ) as resp:
                 if resp.status != 200:
-                    log.warning("Prodia generate returned %s", resp.status)
+                    body = await resp.text()
+                    log.warning("Cloudflare AI returned %s: %s", resp.status, body[:200])
                     return None
-                job = await resp.json(content_type=None)
+                raw = await resp.read()
 
-            job_id = job.get("job")
-            if not job_id:
-                log.warning("Prodia returned no job ID")
-                return None
-
-            # Poll until done (up to 90 s)
-            for _ in range(45):
-                await asyncio.sleep(2)
-                async with session.get(
-                    _PRODIA_JOB_URL.format(job_id=job_id),
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=15),
-                ) as poll:
-                    if poll.status != 200:
-                        continue
-                    status_data = await poll.json(content_type=None)
-
-                status = status_data.get("status")
-                if status == "succeeded":
-                    image_url = status_data.get("imageUrl")
-                    if not image_url:
-                        return None
-                    async with session.get(image_url, timeout=aiohttp.ClientTimeout(total=30)) as img_resp:
-                        if img_resp.status != 200:
-                            return None
-                        raw = await img_resp.read()
-                    return discord.File(io.BytesIO(raw), filename="schematic.png")
-                elif status in ("failed", "error"):
-                    log.warning("Prodia job %s failed: %s", job_id, status_data)
-                    return None
-                # still queued/generating — keep polling
-
-            log.warning("Prodia job %s timed out", job_id)
-            return None
+        return discord.File(io.BytesIO(raw), filename="schematic.png")
 
     except Exception as exc:
-        log.exception("Prodia image generation failed: %s", exc)
+        log.exception("Cloudflare AI image generation failed: %s", exc)
         return None
 
 
@@ -214,14 +185,15 @@ async def _generate_via_craiyon(prompt: str) -> discord.File | None:
 
 # ── Public entry point ───────────────────────────────────────────────────────
 async def _generate_image(prompt: str) -> discord.File | None:
-    """Try Prodia first (if key is set), fall back to Craiyon."""
-    if _PRODIA_KEY:
-        log.info("Using Prodia for image generation")
-        result = await _generate_via_prodia(prompt)
+    """Try Cloudflare Workers AI first (if creds set), fall back to Craiyon."""
+    if _CF_ACCOUNT_ID and _CF_API_TOKEN:
+        log.info("Using Cloudflare Workers AI (Flux-1-Schnell) for image generation")
+        result = await _generate_via_cloudflare(prompt)
         if result is not None:
             return result
-        log.warning("Prodia failed, falling back to Craiyon")
+        log.warning("Cloudflare AI failed, falling back to Craiyon")
 
+    log.info("Using Craiyon v3 for image generation")
     return await _generate_via_craiyon(prompt)
 
 
