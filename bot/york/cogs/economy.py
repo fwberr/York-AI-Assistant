@@ -498,25 +498,11 @@ class Economy(commands.Cog):
             await view._dealer_play_and_finish()
 
     # ---------------- fight ----------------
-    @commands.hybrid_command(name="fight", description="Challenge someone to a fight and bet coins.")
-    @app_commands.describe(member="Who you want to fight.", bet="How many coins to wager.")
-    async def fight(self, ctx: commands.Context, member: discord.Member, bet: int):
+    @commands.hybrid_command(name="fight", description="Challenge someone to a fight. Winner earns random coins.")
+    @app_commands.describe(member="Who you want to fight.")
+    async def fight(self, ctx: commands.Context, member: discord.Member):
         if member.bot or member.id == ctx.author.id:
             await v2.send(ctx, v2.warn("Not Allowed", "Pick a real person — not yourself or a bot."))
-            return
-        if bet <= 0:
-            await v2.send(ctx, v2.danger("Bad Bet", "Bet must be positive."))
-            return
-
-        d = _load()
-        att = _profile(d, ctx.author.id)
-        dfn = _profile(d, member.id)
-
-        if att.get("coins", 0) < bet:
-            await v2.send(ctx, v2.danger("Not Enough Coins", f"You only have **{att.get('coins', 0):,}** coins."))
-            return
-        if dfn.get("coins", 0) < bet:
-            await v2.send(ctx, v2.warn("They're Broke", f"{member.display_name} doesn't have **{bet:,}** coins to wager."))
             return
 
         view = _FightView(challenger_id=ctx.author.id, target_id=member.id)
@@ -524,7 +510,7 @@ class Economy(commands.Cog):
             "warn",
             "⚔️  Fight Challenge!",
             f"{ctx.author.mention} challenges {member.mention} to a fight!\n\n"
-            f"**Bet:** {bet:,} coins each · Winner takes **{bet * 2:,}** coins total.\n\n"
+            f"Winner earns a random cash reward.\n\n"
             f"{member.mention}, do you accept? *(60 seconds)*",
             thumbnail_url=ctx.author.display_avatar.url,
             footer=f"{settings.bot_name} · built by {settings.creator}",
@@ -539,22 +525,14 @@ class Economy(commands.Cog):
             await v2.edit(msg, v2.info("Backed Down", f"{member.display_name} refused the fight."))
             return
 
-        d = _load()
-        att = _profile(d, ctx.author.id)
-        dfn = _profile(d, member.id)
-
-        if att.get("coins", 0) < bet or dfn.get("coins", 0) < bet:
-            await v2.edit(msg, v2.danger("Funds Changed", "One of you no longer has enough coins. Fight cancelled."))
-            return
-
         challenger_wins = random.random() < 0.5
-        if challenger_wins:
-            winner, loser, w_prof, l_prof = ctx.author, member, att, dfn
-        else:
-            winner, loser, w_prof, l_prof = member, ctx.author, dfn, att
+        winner, loser = (ctx.author, member) if challenger_wins else (member, ctx.author)
 
-        w_prof["coins"] = w_prof.get("coins", 0) + bet
-        l_prof["coins"] = l_prof.get("coins", 0) - bet
+        prize = random.randint(50, 500)
+
+        d = _load()
+        w_prof = _profile(d, winner.id)
+        w_prof["coins"] = w_prof.get("coins", 0) + prize
         _grant_xp(w_prof, 15)
         _save(d)
 
@@ -568,9 +546,8 @@ class Economy(commands.Cog):
         await v2.edit(msg, v2.success(
             f"⚔️  {winner.display_name} Wins!",
             f"{random.choice(flavours)}\n\n"
-            f"**{winner.display_name}** wins **{bet:,}** coins from {loser.mention}.\n"
-            f"{winner.display_name}: **{w_prof['coins']:,}** coins · "
-            f"{loser.display_name}: **{l_prof['coins']:,}** coins",
+            f"💰 **{winner.display_name}** earns **{prize:,}** coins!\n"
+            f"New balance: **{w_prof['coins']:,}** coins",
             thumbnail_url=winner.display_avatar.url,
         ))
 
