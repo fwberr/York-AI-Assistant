@@ -493,6 +493,222 @@ class Economy(commands.Cog):
         msg = await v2.send(ctx, container, view=view)
         view.message = msg
 
+        # Auto-resolve natural blackjack immediately
+        if _is_blackjack(view.player_hand):
+            await view._dealer_play_and_finish()
+
+    # ---------------- fight ----------------
+    @commands.hybrid_command(name="fight", description="Challenge someone to a fight and bet coins.")
+    @app_commands.describe(member="Who you want to fight.", bet="How many coins to wager.")
+    async def fight(self, ctx: commands.Context, member: discord.Member, bet: int):
+        if member.bot or member.id == ctx.author.id:
+            await v2.send(ctx, v2.warn("Not Allowed", "Pick a real person — not yourself or a bot."))
+            return
+        if bet <= 0:
+            await v2.send(ctx, v2.danger("Bad Bet", "Bet must be positive."))
+            return
+
+        d = _load()
+        att = _profile(d, ctx.author.id)
+        dfn = _profile(d, member.id)
+
+        if att.get("coins", 0) < bet:
+            await v2.send(ctx, v2.danger("Not Enough Coins", f"You only have **{att.get('coins', 0):,}** coins."))
+            return
+        if dfn.get("coins", 0) < bet:
+            await v2.send(ctx, v2.warn("They're Broke", f"{member.display_name} doesn't have **{bet:,}** coins to wager."))
+            return
+
+        view = _FightView(challenger_id=ctx.author.id, target_id=member.id)
+        msg = await v2.send(ctx, v2.build(
+            "warn",
+            "⚔️  Fight Challenge!",
+            f"{ctx.author.mention} challenges {member.mention} to a fight!\n\n"
+            f"**Bet:** {bet:,} coins each · Winner takes **{bet * 2:,}** coins total.\n\n"
+            f"{member.mention}, do you accept? *(60 seconds)*",
+            thumbnail_url=ctx.author.display_avatar.url,
+            footer=f"{settings.bot_name} · built by {settings.creator}",
+        ), view=view)
+
+        await view.wait()
+
+        if view.accepted is None:
+            await v2.edit(msg, v2.warn("Challenge Expired", f"{member.display_name} didn't respond in time."))
+            return
+        if not view.accepted:
+            await v2.edit(msg, v2.info("Backed Down", f"{member.display_name} refused the fight."))
+            return
+
+        d = _load()
+        att = _profile(d, ctx.author.id)
+        dfn = _profile(d, member.id)
+
+        if att.get("coins", 0) < bet or dfn.get("coins", 0) < bet:
+            await v2.edit(msg, v2.danger("Funds Changed", "One of you no longer has enough coins. Fight cancelled."))
+            return
+
+        challenger_wins = random.random() < 0.5
+        if challenger_wins:
+            winner, loser, w_prof, l_prof = ctx.author, member, att, dfn
+        else:
+            winner, loser, w_prof, l_prof = member, ctx.author, dfn, att
+
+        w_prof["coins"] = w_prof.get("coins", 0) + bet
+        l_prof["coins"] = l_prof.get("coins", 0) - bet
+        _grant_xp(w_prof, 15)
+        _save(d)
+
+        flavours = [
+            f"{winner.display_name} lands a decisive blow!",
+            f"{loser.display_name} slips up — {winner.display_name} capitalises!",
+            f"A close fight, but {winner.display_name} edges it at the last second!",
+            f"{winner.display_name} barely survives but walks away victorious!",
+            f"{winner.display_name} overpowers {loser.display_name} completely!",
+        ]
+        await v2.edit(msg, v2.success(
+            f"⚔️  {winner.display_name} Wins!",
+            f"{random.choice(flavours)}\n\n"
+            f"**{winner.display_name}** wins **{bet:,}** coins from {loser.mention}.\n"
+            f"{winner.display_name}: **{w_prof['coins']:,}** coins · "
+            f"{loser.display_name}: **{l_prof['coins']:,}** coins",
+            thumbnail_url=winner.display_avatar.url,
+        ))
+
+    # ---------------- slots ----------------
+    @commands.hybrid_command(name="slots", description="Spin the slot machine and bet coins.")
+    @app_commands.describe(bet="Coins to bet (or 'all').")
+    async def slots(self, ctx: commands.Context, bet: str):
+        d = _load(); p = _profile(d, ctx.author.id)
+        bal = p.get("coins", 0)
+
+        bet_l = bet.strip().lower()
+        if bet_l in ("all", "max"):
+            amount = bal
+        else:
+            try:
+                amount = int(bet_l)
+            except ValueError:
+                await v2.send(ctx, v2.danger("Bad Bet", "Bet must be a number or `all`."))
+                return
+
+        if amount <= 0:
+            await v2.send(ctx, v2.danger("Bad Bet", "Bet must be positive."))
+            return
+        if amount > bal:
+            await v2.send(ctx, v2.danger("Not Enough Coins", f"You only have **{bal:,}** coins."))
+            return
+
+        reels = _spin()
+        outcome, mult = _eval_spin(reels)
+        winnings = int(amount * mult)
+        net = winnings - amount
+
+        p["coins"] = bal - amount + winnings
+        _grant_xp(p, 3 if net >= 0 else 1)
+        _save(d)
+
+        view = _SlotsView(player=ctx.author, bet=amount)
+        await v2.send(ctx, _slots_embed(ctx.author, reels, outcome, net, amount, p["coins"]), view=view)
+
+    # ---------------- race ----------------
+    @commands.hybrid_command(name="race", description="Bet on a horse race. Pick your horse and cross your fingers.")
+    @app_commands.describe(bet="Coins to wager (or 'all').")
+    async def race(self, ctx: commands.Context, bet: str):
+        d = _load(); p = _profile(d, ctx.author.id)
+        bal = p.get("coins", 0)
+
+        bet_l = bet.strip().lower()
+        if bet_l in ("all", "max"):
+            amount = bal
+        else:
+            try:
+                amount = int(bet_l)
+            except ValueError:
+                await v2.send(ctx, v2.danger("Bad Bet", "Bet must be a number or `all`."))
+                return
+
+        if amount <= 0:
+            await v2.send(ctx, v2.danger("Bad Bet", "Bet must be positive."))
+            return
+        if amount > bal:
+            await v2.send(ctx, v2.danger("Not Enough Coins", f"You only have **{bal:,}** coins."))
+            return
+
+        stat_blocks = []
+        for h in _HORSES:
+            spd = "█" * h["speed"]   + "░" * (10 - h["speed"])
+            sta = "█" * h["stamina"] + "░" * (10 - h["stamina"])
+            lck = "█" * h["luck"]    + "░" * (10 - h["luck"])
+            stat_blocks.append(
+                f"{h['emoji']} **{h['name']}**\n"
+                f"Speed    `{spd}`\n"
+                f"Stamina  `{sta}`\n"
+                f"Luck     `{lck}`"
+            )
+
+        view = _RaceView(player_id=ctx.author.id)
+        msg = await v2.send(ctx, v2.build(
+            "info",
+            "🏇  Horse Racing — Pick Your Horse",
+            f"**Bet:** {amount:,} coins · Win pays **2×** · High stats help but don't guarantee a win!\n\n"
+            + "\n\n".join(stat_blocks),
+            footer=f"{settings.bot_name} · built by {settings.creator}",
+        ), view=view)
+
+        await view.wait()
+
+        if view.chosen is None:
+            await v2.edit(msg, v2.warn("Abandoned", "You didn't pick a horse in time. No coins deducted."))
+            return
+
+        d = _load(); p = _profile(d, ctx.author.id)
+        if p.get("coins", 0) < amount:
+            await v2.edit(msg, v2.danger("Not Enough Coins", "Your balance changed — race cancelled."))
+            return
+        p["coins"] = p.get("coins", 0) - amount
+        _save(d)
+
+        chosen = _HORSES[view.chosen]
+        await v2.edit(msg, v2.build(
+            "info", "🏇  Racing...",
+            f"You backed {chosen['emoji']} **{chosen['name']}** — the race is on!",
+            footer=f"{settings.bot_name} · built by {settings.creator}",
+        ))
+        await asyncio.sleep(2)
+
+        winner_idx = _race_result()
+        winner_horse = _HORSES[winner_idx]
+
+        others = [i for i in range(len(_HORSES)) if i != winner_idx]
+        random.shuffle(others)
+        order = [winner_idx] + others
+        medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+        finish_line = "\n".join(
+            f"{medals[rank]} {_HORSES[pos]['emoji']} **{_HORSES[pos]['name']}**"
+            for rank, pos in enumerate(order)
+        )
+
+        d = _load(); p = _profile(d, ctx.author.id)
+        if winner_idx == view.chosen:
+            prize = amount * 2
+            p["coins"] = p.get("coins", 0) + prize
+            _grant_xp(p, 20)
+            _save(d)
+            await v2.edit(msg, v2.success(
+                f"🏇  {winner_horse['name']} Wins!",
+                f"Your horse came first! 🎉\n\n{finish_line}\n\n"
+                f"💰 **+{amount:,} coins** · Balance: **{p['coins']:,}**",
+            ))
+        else:
+            _grant_xp(p, 2)
+            _save(d)
+            await v2.edit(msg, v2.danger(
+                f"🏇  {winner_horse['name']} Wins!",
+                f"Your horse {chosen['emoji']} **{chosen['name']}** didn't win.\n\n"
+                f"{finish_line}\n\n"
+                f"💸 **−{amount:,} coins** · Balance: **{p['coins']:,}**",
+            ))
+
 
 # ===========================================================================
 # UI helpers
@@ -559,6 +775,76 @@ def _hand_str(hand: list[str], hide_first: bool = False) -> str:
     return " ".join(f"`{c}`" for c in hand)
 
 
+# ---- Slots engine ----
+_SLOT_SYMS = ["🍒", "🍋", "🍊", "🍇", "🔔", "💎", "7️⃣"]
+_SLOT_W    = [30, 25, 20, 15, 5, 3, 2]
+_SLOT_PAY: dict = {
+    ("7️⃣", 3): 20, ("💎", 3): 10, ("🔔", 3): 5,
+    ("🍇", 3): 4,  ("🍊", 3): 3,  ("🍋", 3): 2.5, ("🍒", 3): 2,
+}
+
+
+def _spin() -> list[str]:
+    return random.choices(_SLOT_SYMS, weights=_SLOT_W, k=3)
+
+
+def _eval_spin(reels: list[str]) -> tuple[str, float]:
+    r1, r2, r3 = reels
+    if r1 == r2 == r3:
+        return f"Three {r1}!", _SLOT_PAY.get((r1, 3), 2.0)
+    if r1 == r2 or r2 == r3 or r1 == r3:
+        return "Two of a kind", 0.5
+    return "No match", 0.0
+
+
+def _slots_embed(
+    player: discord.abc.User,
+    reels: list[str],
+    outcome: str,
+    net: int,
+    bet: int,
+    bal: int,
+) -> discord.Embed:
+    reel_display = "  ".join(reels)
+    if net > 0:
+        style, result = "success", f"💰 **+{net:,} coins** — {outcome}"
+    elif net == 0:
+        style, result = "info", f"↔️ Broke even — {outcome}"
+    else:
+        style, result = "danger", f"💸 **−{abs(net):,} coins** — {outcome}"
+    return v2.build(
+        style,
+        f"{settings.emoji.spark}  Slot Machine",
+        f"┃ {reel_display} ┃\n\n{result}",
+        fields=[("Bet", f"{bet:,}c"), ("Balance", f"{bal:,}c")],
+        extra_sections=[(
+            "**Payouts:**\n"
+            "7️⃣7️⃣7️⃣ → **20×** · 💎💎💎 → **10×** · 🔔🔔🔔 → **5×**\n"
+            "🍇🍇🍇 → **4×** · 🍊🍊🍊 → **3×** · 🍋🍋🍋 → **2.5×** · 🍒🍒🍒 → **2×**\n"
+            "Two matching → **0.5×** (half back)", None,
+        )],
+        footer=f"{settings.bot_name} · built by {settings.creator}",
+    )
+
+
+# ---- Horse racing engine ----
+_HORSES = [
+    {"name": "Thunder Bolt",  "emoji": "🟡", "speed": 9, "stamina": 6, "luck": 5},
+    {"name": "Shadow Dancer", "emoji": "⚫", "speed": 7, "stamina": 8, "luck": 7},
+    {"name": "Golden Arrow",  "emoji": "🟠", "speed": 8, "stamina": 7, "luck": 6},
+    {"name": "Silver Storm",  "emoji": "⚪", "speed": 6, "stamina": 9, "luck": 8},
+    {"name": "Lucky Charm",   "emoji": "🟢", "speed": 5, "stamina": 7, "luck": 10},
+]
+
+
+def _race_result() -> int:
+    weights = []
+    for h in _HORSES:
+        base = h["speed"] * 0.4 + h["stamina"] * 0.3 + h["luck"] * 0.3
+        weights.append(max(0.5, base + random.gauss(0, 1.5)))
+    return random.choices(range(len(_HORSES)), weights=weights, k=1)[0]
+
+
 class _BlackjackView(discord.ui.View):
     def __init__(self, player: discord.abc.User, bet: int):
         super().__init__(timeout=120)
@@ -574,6 +860,16 @@ class _BlackjackView(discord.ui.View):
         self.delta: int = 0
         self.balance_after: int = 0
 
+        self._btn_hit = discord.ui.Button(label="Hit", style=discord.ButtonStyle.primary, emoji="➕")
+        self._btn_stand = discord.ui.Button(label="Stand", style=discord.ButtonStyle.secondary, emoji="✋")
+        self._btn_double = discord.ui.Button(label="Double Down", style=discord.ButtonStyle.success, emoji="⏫")
+        self._btn_hit.callback = self._on_hit
+        self._btn_stand.callback = self._on_stand
+        self._btn_double.callback = self._on_double
+        self.add_item(self._btn_hit)
+        self.add_item(self._btn_stand)
+        self.add_item(self._btn_double)
+
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.player.id:
             await interaction.response.send_message("This is not your hand.", ephemeral=True)
@@ -582,7 +878,12 @@ class _BlackjackView(discord.ui.View):
 
     async def on_timeout(self) -> None:
         if not self.finished:
-            await self._dealer_play_and_finish(reason="Timed out — auto-stand.")
+            await self._dealer_play_and_finish()
+
+    def _disable_all(self) -> None:
+        for item in self.children:
+            if isinstance(item, discord.ui.Button):
+                item.disabled = True
 
     def render(self, opening: bool = False) -> discord.Embed:
         pv = _hand_value(self.player_hand)
@@ -594,18 +895,15 @@ class _BlackjackView(discord.ui.View):
 
         if not self.finished:
             style = "info"
-            if opening and _is_blackjack(self.player_hand):
-                title = "Blackjack — Natural 21!"
-            else:
-                title = "Blackjack"
+            title = "Blackjack — Natural 21!" if opening and _is_blackjack(self.player_hand) else "Blackjack"
             banner = ""
         else:
             banner_map = {
                 "blackjack": ("success", "YOU WIN — Blackjack! 🎉", f"💰 **+{self.delta:,} coins** (3:2 payout)"),
-                "win":       ("success", "YOU WIN! 🎉",            f"💰 **+{self.delta:,} coins**"),
-                "push":      ("info",    "PUSH — Tie",             f"↔️ Bet of **{self.bet:,}** returned. No change."),
-                "bust":      ("danger",  "YOU LOSE — Bust! 💸",    f"**−{abs(self.delta):,} coins**"),
-                "lose":      ("danger",  "YOU LOSE 💸",            f"**−{abs(self.delta):,} coins**"),
+                "win":       ("success", "YOU WIN! 🎉",             f"💰 **+{self.delta:,} coins**"),
+                "push":      ("info",    "PUSH — Tie",              f"↔️ Bet of **{self.bet:,}** returned."),
+                "bust":      ("danger",  "YOU LOSE — Bust! 💸",     f"**−{abs(self.delta):,} coins**"),
+                "lose":      ("danger",  "YOU LOSE 💸",             f"**−{abs(self.delta):,} coins**"),
             }
             style, title, banner = banner_map.get(self.outcome or "lose", banner_map["lose"])
 
@@ -615,7 +913,6 @@ class _BlackjackView(discord.ui.View):
             if self.finished else
             f"{settings.bot_name} · built by {settings.creator}"
         )
-
         return v2.build(
             style,
             f"{settings.emoji.spark}  {title}",
@@ -627,26 +924,20 @@ class _BlackjackView(discord.ui.View):
             footer=footer,
         )
 
-    @discord.ui.button(label="Hit", style=discord.ButtonStyle.primary, emoji="➕")
-    async def hit_btn(self, interaction: discord.Interaction, _: discord.ui.Button):
+    async def _on_hit(self, interaction: discord.Interaction) -> None:
         self._can_double = False
         self.player_hand.append(self.deck.pop())
         if _hand_value(self.player_hand) >= 21:
             await interaction.response.defer()
             await self._dealer_play_and_finish()
             return
-        await interaction.response.edit_message(
-            embed=self.render(),
-            view=self,
-        )
+        await interaction.response.edit_message(embed=self.render(), view=self)
 
-    @discord.ui.button(label="Stand", style=discord.ButtonStyle.secondary, emoji="✋")
-    async def stand_btn(self, interaction: discord.Interaction, _: discord.ui.Button):
+    async def _on_stand(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
         await self._dealer_play_and_finish()
 
-    @discord.ui.button(label="Double", style=discord.ButtonStyle.success, emoji="⏫")
-    async def double_btn(self, interaction: discord.Interaction, _: discord.ui.Button):
+    async def _on_double(self, interaction: discord.Interaction) -> None:
         if not self._can_double:
             await interaction.response.send_message("You can only double on your opening hand.", ephemeral=True)
             return
@@ -662,13 +953,11 @@ class _BlackjackView(discord.ui.View):
         await interaction.response.defer()
         await self._dealer_play_and_finish()
 
-    async def _dealer_play_and_finish(self, reason: str | None = None) -> None:
+    async def _dealer_play_and_finish(self) -> None:
         if self.finished:
             return
         self.finished = True
-        for btn in self.children:
-            if isinstance(btn, discord.ui.Button):
-                btn.disabled = True
+        self._disable_all()
 
         pv = _hand_value(self.player_hand)
         if pv > 21:
@@ -700,6 +989,106 @@ class _BlackjackView(discord.ui.View):
         if self.message:
             await v2.edit(self.message, self.render(), view=self)
         self.stop()
+
+
+# ---------- Fight view ----------
+class _FightView(discord.ui.View):
+    def __init__(self, challenger_id: int, target_id: int):
+        super().__init__(timeout=60)
+        self.challenger_id = challenger_id
+        self.target_id = target_id
+        self.accepted: Optional[bool] = None
+
+        btn_accept = discord.ui.Button(label="Accept Fight", style=discord.ButtonStyle.danger, emoji="⚔️")
+        btn_decline = discord.ui.Button(label="Back Down", style=discord.ButtonStyle.secondary, emoji="🏃")
+        btn_accept.callback = self._on_accept
+        btn_decline.callback = self._on_decline
+        self.add_item(btn_accept)
+        self.add_item(btn_decline)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.target_id:
+            await interaction.response.send_message("This challenge isn't for you.", ephemeral=True)
+            return False
+        return True
+
+    async def _on_accept(self, interaction: discord.Interaction) -> None:
+        self.accepted = True
+        await interaction.response.defer()
+        self.stop()
+
+    async def _on_decline(self, interaction: discord.Interaction) -> None:
+        self.accepted = False
+        await interaction.response.defer()
+        self.stop()
+
+
+# ---------- Slots view ----------
+class _SlotsView(discord.ui.View):
+    def __init__(self, player: discord.abc.User, bet: int):
+        super().__init__(timeout=30)
+        self.player = player
+        self.bet = bet
+
+        btn = discord.ui.Button(label="Spin Again", style=discord.ButtonStyle.primary, emoji="🎰")
+        btn.callback = self._on_spin
+        self.add_item(btn)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.player.id:
+            await interaction.response.send_message("These aren't your slots!", ephemeral=True)
+            return False
+        return True
+
+    async def _on_spin(self, interaction: discord.Interaction) -> None:
+        d = _load(); p = _profile(d, self.player.id)
+        if p.get("coins", 0) < self.bet:
+            await interaction.response.send_message(
+                f"Not enough coins to spin again (need **{self.bet:,}**).", ephemeral=True
+            )
+            return
+        reels = _spin()
+        outcome, mult = _eval_spin(reels)
+        winnings = int(self.bet * mult)
+        net = winnings - self.bet
+        p["coins"] = p.get("coins", 0) - self.bet + winnings
+        _grant_xp(p, 3 if net >= 0 else 1)
+        _save(d)
+        await interaction.response.edit_message(
+            embed=_slots_embed(self.player, reels, outcome, net, self.bet, p["coins"]),
+            view=self,
+        )
+
+
+# ---------- Horse racing view ----------
+class _HorseBtn(discord.ui.Button):
+    def __init__(self, idx: int, horse: dict):
+        super().__init__(label=horse["name"], style=discord.ButtonStyle.primary, emoji=horse["emoji"])
+        self.idx = idx
+
+    async def callback(self, interaction: discord.Interaction) -> None:
+        view: _RaceView = self.view  # type: ignore
+        view.chosen = self.idx
+        for item in view.children:
+            if isinstance(item, discord.ui.Button):
+                item.disabled = True
+        await interaction.response.defer()
+        view.stop()
+
+
+class _RaceView(discord.ui.View):
+    def __init__(self, player_id: int):
+        super().__init__(timeout=60)
+        self.player_id = player_id
+        self.chosen: Optional[int] = None
+        for i, h in enumerate(_HORSES):
+            self.add_item(_HorseBtn(i, h))
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.player_id:
+            await interaction.response.send_message("This race isn't yours to bet on.", ephemeral=True)
+            return False
+        return True
 
 
 async def setup(bot: commands.Bot) -> None:

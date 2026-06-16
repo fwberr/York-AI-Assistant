@@ -139,10 +139,32 @@ class Insights(commands.Cog):
     @commands.hybrid_command(name="avatar", description="Show a member's avatar.")
     async def avatar(self, ctx: commands.Context, member: discord.Member | None = None):
         m = member or ctx.author
-        # For avatars, V1 embed works better since it supports large images natively.
         import discord as _d
         e = _d.Embed(title=f"Avatar — {m.display_name}", color=settings.accent_color)
         e.set_image(url=m.display_avatar.url)
+        await ctx.send(embed=e)
+
+    @commands.hybrid_command(name="banner", description="Show a member's Discord profile banner.")
+    @app_commands.describe(member="(Optional) whose banner to show.")
+    async def banner(self, ctx: commands.Context, member: discord.Member | None = None):
+        target = member or ctx.author
+        # Must fetch_user — Member cache doesn't include banners
+        user = await ctx.bot.fetch_user(target.id)
+        if not user.banner:
+            await v2.send(ctx, v2.info(
+                f"{target.display_name}'s Banner",
+                "This user hasn't set a profile banner.",
+                thumbnail_url=target.display_avatar.url,
+            ))
+            return
+        e = v2.build(
+            "info",
+            f"{target.display_name}'s Banner",
+            "",
+            thumbnail_url=target.display_avatar.url,
+            footer=f"{settings.bot_name} · built by {settings.creator}",
+        )
+        e.set_image(url=user.banner.url)
         await ctx.send(embed=e)
 
 
