@@ -48,6 +48,7 @@ class York(commands.Bot):
             "york.cogs.fishing",
             "york.cogs.starboard",
             "york.cogs.proactive",
+            "york.cogs.fabrication",
             "york.cogs.help_cog",
         ):
             try:

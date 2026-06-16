@@ -76,6 +76,15 @@ CATEGORIES = {
             ("Work", "`!work` — earn coins every 30 minutes"),
         ],
     ),
+    "Fabrication Lab": (
+        "Jarvis-style holographic schematics and combat simulations.",
+        [
+            ("Project", "`!project <design>` — render a holographic blueprint (e.g. `!project Mark X gauntlet`)"),
+            ("Rotate",  "`!rotate <design>` — three-angle render: front, side, and 3/4 perspective"),
+            ("Simulate","`!simulate <design>` — AI diagnostic readout: materials, integrity, power, combat rating"),
+            ("Full run", "`!fabricate <design>` — hologram + simulation together in one command"),
+        ],
+    ),
     "Starboard": (
         "Automatically highlights popular messages. Requires Manage Server to configure.",
         [
