@@ -73,17 +73,62 @@ def _schematic_prompt(description: str, angle: str = "isometric 3D view") -> str
 
 
 # ---------------------------------------------------------------------------
-# Image generation — Cloudflare Workers AI (primary) + Craiyon v3 (fallback)
+# Image generation
 #
-# Cloudflare free tier: 10,000 neurons/day, no credit card required.
-# Flux-1-Schnell costs ~38 neurons per 512×512 image → ~260 free images/day.
-#
-# Setup (free, 2 minutes):
-#   1. Create a free account at cloudflare.com
-#   2. Grab your Account ID from the Cloudflare dashboard home page
-#   3. Go to My Profile → API Tokens → Create Token → use "Workers AI" template
-#   4. Add CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN as bot secrets
+# Provider chain (first available wins):
+#   1. Together AI — FLUX.1-schnell-Free (genuinely free, just needs a free
+#      API key from api.together.ai).  Set TOGETHER_API_KEY as a secret.
+#   2. Cloudflare Workers AI — Flux-1-Schnell (free tier, 10k neurons/day).
+#      Set CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN as secrets.
 # ---------------------------------------------------------------------------
+
+# ── Together AI ──────────────────────────────────────────────────────────────
+_TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY", "")
+_TOGETHER_URL     = "https://api.together.xyz/v1/images/generations"
+_TOGETHER_MODEL   = "black-forest-labs/FLUX.1-schnell-Free"
+
+
+async def _generate_via_together(prompt: str) -> discord.File | None:
+    """Generate an image using Together AI FLUX.1-schnell-Free (free tier)."""
+    headers = {
+        "Authorization": f"Bearer {_TOGETHER_API_KEY}",
+        "Content-Type":  "application/json",
+    }
+    payload = {
+        "model":           _TOGETHER_MODEL,
+        "prompt":          prompt,
+        "width":           512,
+        "height":          512,
+        "steps":           4,
+        "n":               1,
+        "response_format": "b64_json",
+    }
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                _TOGETHER_URL,
+                json=payload,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=90),
+            ) as resp:
+                if resp.status != 200:
+                    body = await resp.text()
+                    log.warning("Together AI returned %s: %s", resp.status, body[:300])
+                    return None
+                data = await resp.json(content_type=None)
+
+        b64 = data.get("data", [{}])[0].get("b64_json", "")
+        if not b64:
+            log.warning("Together AI returned no image data")
+            return None
+
+        raw = base64.b64decode(b64)
+        return discord.File(io.BytesIO(raw), filename="schematic.png")
+
+    except Exception as exc:
+        log.exception("Together AI image generation failed: %s", exc)
+        return None
+
 
 # ── Cloudflare Workers AI ────────────────────────────────────────────────────
 _CF_ACCOUNT_ID = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
@@ -102,7 +147,6 @@ async def _generate_via_cloudflare(prompt: str) -> discord.File | None:
         "Content-Type":  "application/json",
     }
     payload = {"prompt": prompt, "num_steps": 4}
-
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(
@@ -116,85 +160,31 @@ async def _generate_via_cloudflare(prompt: str) -> discord.File | None:
                     log.warning("Cloudflare AI returned %s: %s", resp.status, body[:200])
                     return None
                 raw = await resp.read()
-
         return discord.File(io.BytesIO(raw), filename="schematic.png")
-
     except Exception as exc:
         log.exception("Cloudflare AI image generation failed: %s", exc)
         return None
 
 
-# ── Craiyon v3 fallback ──────────────────────────────────────────────────────
-_CRAIYON_URL = "https://api.craiyon.com/v3"
-
-
-async def _generate_via_craiyon(prompt: str) -> discord.File | None:
-    """Generate an image using Craiyon v3 (no API key required)."""
-    payload = {
-        "prompt":          prompt,
-        "negative_prompt": "blurry, ugly, low quality",
-        "model":           "art",
-        "token":           None,
-        "version":         "35s5hfwn9n78gb06",
-    }
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/124.0.0.0 Safari/537.36"
-        ),
-    }
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                _CRAIYON_URL,
-                json=payload,
-                headers=headers,
-                timeout=aiohttp.ClientTimeout(total=120),
-            ) as resp:
-                if resp.status != 200:
-                    log.warning("Craiyon returned %s", resp.status)
-                    return None
-                data = await resp.json(content_type=None)
-
-        # v3 returns a list of direct image URLs (webp)
-        images = data.get("images", [])
-        if not images:
-            log.warning("Craiyon returned empty images list")
-            return None
-
-        image_url = images[0]
-
-        # If it looks like a URL, fetch it; otherwise try base64 fallback
-        if isinstance(image_url, str) and image_url.startswith("http"):
-            async with aiohttp.ClientSession() as session:
-                async with session.get(image_url, timeout=aiohttp.ClientTimeout(total=30)) as img_resp:
-                    if img_resp.status != 200:
-                        return None
-                    raw = await img_resp.read()
-        else:
-            raw = base64.b64decode(image_url)
-
-        return discord.File(io.BytesIO(raw), filename="schematic.png")
-
-    except Exception as exc:
-        log.exception("Craiyon image generation failed: %s", exc)
-        return None
-
-
 # ── Public entry point ───────────────────────────────────────────────────────
 async def _generate_image(prompt: str) -> discord.File | None:
-    """Try Cloudflare Workers AI first (if creds set), fall back to Craiyon."""
+    """Try Together AI first, then Cloudflare Workers AI."""
+    if _TOGETHER_API_KEY:
+        log.info("Using Together AI (FLUX.1-schnell-Free) for image generation")
+        result = await _generate_via_together(prompt)
+        if result is not None:
+            return result
+        log.warning("Together AI failed, trying Cloudflare")
+
     if _CF_ACCOUNT_ID and _CF_API_TOKEN:
         log.info("Using Cloudflare Workers AI (Flux-1-Schnell) for image generation")
         result = await _generate_via_cloudflare(prompt)
         if result is not None:
             return result
-        log.warning("Cloudflare AI failed, falling back to Craiyon")
+        log.warning("Cloudflare AI failed")
 
-    log.info("Using Craiyon v3 for image generation")
-    return await _generate_via_craiyon(prompt)
+    log.error("No image provider succeeded — set TOGETHER_API_KEY to enable image generation")
+    return None
 
 
 # ---------------------------------------------------------------------------
