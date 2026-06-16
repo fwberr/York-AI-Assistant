@@ -7,6 +7,7 @@ import hashlib
 import io
 import json
 import logging
+import os
 import urllib.parse
 from pathlib import Path
 from typing import Any
@@ -72,17 +73,98 @@ def _schematic_prompt(description: str, angle: str = "isometric 3D view") -> str
 
 
 # ---------------------------------------------------------------------------
-# Image generation — Craiyon (free, no API key, not HuggingFace)
+# Image generation — Prodia (primary, free API key) + Craiyon v3 (fallback)
 # ---------------------------------------------------------------------------
-_CRAIYON_URL = "https://backend.craiyon.com/generate"
+
+# ── Prodia ──────────────────────────────────────────────────────────────────
+_PRODIA_GENERATE_URL = "https://api.prodia.com/v1/sd/generate"
+_PRODIA_JOB_URL      = "https://api.prodia.com/v1/job/{job_id}"
+_PRODIA_KEY          = os.environ.get("PRODIA_API_KEY", "")
 
 
-async def _generate_image(prompt: str) -> discord.File | None:
+async def _generate_via_prodia(prompt: str) -> discord.File | None:
+    """Generate an image using the Prodia API (requires PRODIA_API_KEY)."""
+    headers = {
+        "X-Prodia-Key": _PRODIA_KEY,
+        "accept":       "application/json",
+        "content-type": "application/json",
+    }
     payload = {
-        "prompt": prompt,
-        "version": "c4ue22fb7kb6wlac",
-        "token":   None,
-        "model":   "art",
+        "model":           "dreamshaper_8.safetensors",
+        "prompt":          prompt,
+        "negative_prompt": "blurry, ugly, low quality, watermark, text, signature",
+        "steps":           25,
+        "cfg_scale":       7,
+        "seed":            -1,
+        "sampler":         "DPM++ 2M Karras",
+        "width":           512,
+        "height":          512,
+    }
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                _PRODIA_GENERATE_URL,
+                json=payload,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=30),
+            ) as resp:
+                if resp.status != 200:
+                    log.warning("Prodia generate returned %s", resp.status)
+                    return None
+                job = await resp.json(content_type=None)
+
+            job_id = job.get("job")
+            if not job_id:
+                log.warning("Prodia returned no job ID")
+                return None
+
+            # Poll until done (up to 90 s)
+            for _ in range(45):
+                await asyncio.sleep(2)
+                async with session.get(
+                    _PRODIA_JOB_URL.format(job_id=job_id),
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=15),
+                ) as poll:
+                    if poll.status != 200:
+                        continue
+                    status_data = await poll.json(content_type=None)
+
+                status = status_data.get("status")
+                if status == "succeeded":
+                    image_url = status_data.get("imageUrl")
+                    if not image_url:
+                        return None
+                    async with session.get(image_url, timeout=aiohttp.ClientTimeout(total=30)) as img_resp:
+                        if img_resp.status != 200:
+                            return None
+                        raw = await img_resp.read()
+                    return discord.File(io.BytesIO(raw), filename="schematic.png")
+                elif status in ("failed", "error"):
+                    log.warning("Prodia job %s failed: %s", job_id, status_data)
+                    return None
+                # still queued/generating — keep polling
+
+            log.warning("Prodia job %s timed out", job_id)
+            return None
+
+    except Exception as exc:
+        log.exception("Prodia image generation failed: %s", exc)
+        return None
+
+
+# ── Craiyon v3 fallback ──────────────────────────────────────────────────────
+_CRAIYON_URL = "https://api.craiyon.com/v3"
+
+
+async def _generate_via_craiyon(prompt: str) -> discord.File | None:
+    """Generate an image using Craiyon v3 (no API key required)."""
+    payload = {
+        "prompt":          prompt,
+        "negative_prompt": "blurry, ugly, low quality",
+        "model":           "art",
+        "token":           None,
+        "version":         "35s5hfwn9n78gb06",
     }
     headers = {
         "Content-Type": "application/json",
@@ -105,18 +187,42 @@ async def _generate_image(prompt: str) -> discord.File | None:
                     return None
                 data = await resp.json(content_type=None)
 
+        # v3 returns a list of direct image URLs (webp)
         images = data.get("images", [])
         if not images:
             log.warning("Craiyon returned empty images list")
             return None
 
-        # Craiyon returns a list of base64-encoded PNG strings — pick the first
-        raw = base64.b64decode(images[0])
+        image_url = images[0]
+
+        # If it looks like a URL, fetch it; otherwise try base64 fallback
+        if isinstance(image_url, str) and image_url.startswith("http"):
+            async with aiohttp.ClientSession() as session:
+                async with session.get(image_url, timeout=aiohttp.ClientTimeout(total=30)) as img_resp:
+                    if img_resp.status != 200:
+                        return None
+                    raw = await img_resp.read()
+        else:
+            raw = base64.b64decode(image_url)
+
         return discord.File(io.BytesIO(raw), filename="schematic.png")
 
     except Exception as exc:
-        log.exception("Image generation failed: %s", exc)
+        log.exception("Craiyon image generation failed: %s", exc)
         return None
+
+
+# ── Public entry point ───────────────────────────────────────────────────────
+async def _generate_image(prompt: str) -> discord.File | None:
+    """Try Prodia first (if key is set), fall back to Craiyon."""
+    if _PRODIA_KEY:
+        log.info("Using Prodia for image generation")
+        result = await _generate_via_prodia(prompt)
+        if result is not None:
+            return result
+        log.warning("Prodia failed, falling back to Craiyon")
+
+    return await _generate_via_craiyon(prompt)
 
 
 # ---------------------------------------------------------------------------
