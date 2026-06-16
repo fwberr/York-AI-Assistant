@@ -2,9 +2,13 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import hashlib
+import io
 import json
 import logging
 import urllib.parse
+from pathlib import Path
 from typing import Any
 
 import aiohttp
@@ -17,6 +21,32 @@ from .. import ai as ai_module
 from ..config import settings
 
 log = logging.getLogger("york.fabrication")
+
+# ---------------------------------------------------------------------------
+# Simulation cache — same description always returns the same specs
+# ---------------------------------------------------------------------------
+_CACHE_FILE: Path = settings.data_dir / "fabrication_cache.json"
+
+
+def _load_cache() -> dict[str, Any]:
+    try:
+        return json.loads(_CACHE_FILE.read_text())
+    except Exception:
+        return {}
+
+
+def _save_cache(cache: dict[str, Any]) -> None:
+    try:
+        _CACHE_FILE.write_text(json.dumps(cache, indent=2))
+    except Exception as exc:
+        log.warning("Could not save fabrication cache: %s", exc)
+
+
+def _cache_key(description: str) -> str:
+    """Stable 16-char key for any description string."""
+    normalised = description.lower().strip()
+    return hashlib.sha256(normalised.encode()).hexdigest()[:16]
+
 
 # ---------------------------------------------------------------------------
 # Prompt construction
@@ -42,37 +72,55 @@ def _schematic_prompt(description: str, angle: str = "isometric 3D view") -> str
 
 
 # ---------------------------------------------------------------------------
-# Image generation via Pollinations.ai — free, no API key required
+# Image generation — Craiyon (free, no API key, not HuggingFace)
 # ---------------------------------------------------------------------------
-_POLLINATIONS_URL = (
-    "https://image.pollinations.ai/prompt/{prompt}"
-    "?width=1024&height=1024&nologo=true&model=flux&seed={seed}"
-)
+_CRAIYON_URL = "https://backend.craiyon.com/generate"
 
 
-async def _generate_image(prompt: str, seed: int | None = None) -> discord.File | None:
-    import random as _random
-    import io
-    s = seed if seed is not None else _random.randint(1, 999_999)
-    url = _POLLINATIONS_URL.format(
-        prompt=urllib.parse.quote(prompt, safe=""),
-        seed=s,
-    )
+async def _generate_image(prompt: str) -> discord.File | None:
+    payload = {
+        "prompt": prompt,
+        "version": "c4ue22fb7kb6wlac",
+        "token":   None,
+        "model":   "art",
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        ),
+    }
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=60)) as resp:
+            async with session.post(
+                _CRAIYON_URL,
+                json=payload,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=120),
+            ) as resp:
                 if resp.status != 200:
-                    log.warning("Pollinations returned %s", resp.status)
+                    log.warning("Craiyon returned %s", resp.status)
                     return None
-                data = await resp.read()
-        return discord.File(io.BytesIO(data), filename="schematic.png")
+                data = await resp.json(content_type=None)
+
+        images = data.get("images", [])
+        if not images:
+            log.warning("Craiyon returned empty images list")
+            return None
+
+        # Craiyon returns a list of base64-encoded PNG strings — pick the first
+        raw = base64.b64decode(images[0])
+        return discord.File(io.BytesIO(raw), filename="schematic.png")
+
     except Exception as exc:
         log.exception("Image generation failed: %s", exc)
         return None
 
 
 # ---------------------------------------------------------------------------
-# Simulation via LLM (structured JSON)
+# Simulation via LLM (structured JSON) — cached for consistency
 # ---------------------------------------------------------------------------
 _SIM_SYSTEM = (
     "You are York's internal fabrication AI. Return ONLY valid JSON — "
@@ -97,11 +145,22 @@ Return this exact JSON structure:
 }}
 """
 
+# Module-level cache — loaded once at import, written after each new entry
+_SIM_CACHE: dict[str, Any] = _load_cache()
+
 
 async def _run_simulation(description: str) -> dict[str, Any] | None:
+    key = _cache_key(description)
+
+    # Return cached result if we already know this design
+    if key in _SIM_CACHE:
+        log.info("Fabrication cache hit for '%s'", description)
+        return _SIM_CACHE[key]
+
     c = ai_module.client()
     if c is None:
         return None
+
     try:
         resp = await c.chat.completions.create(
             model=settings.ai_model,
@@ -110,13 +169,20 @@ async def _run_simulation(description: str) -> dict[str, Any] | None:
                 {"role": "user",   "content": _SIM_TEMPLATE.format(description=description)},
             ],
             max_tokens=400,
-            temperature=0.75,
+            temperature=0.1,   # low — minimises variation on first run
         )
         raw = (resp.choices[0].message.content or "").strip()
         if raw.startswith("```"):
             lines = raw.splitlines()
             raw = "\n".join(ln for ln in lines if not ln.startswith("```"))
-        return json.loads(raw)
+
+        result = json.loads(raw)
+
+        # Persist to disk so future calls return identical data
+        _SIM_CACHE[key] = result
+        _save_cache(_SIM_CACHE)
+        return result
+
     except Exception as exc:
         log.exception("Simulation parse failed: %s", exc)
         return None
@@ -164,7 +230,7 @@ class Fabrication(commands.Cog):
         status = await v2.send(ctx, v2.info(
             "⬡  Holographic Array Online",
             f"Rendering schematic for: **{description}**\n"
-            "-# Calibrating emitter grid — stand by.",
+            "-# Calibrating emitter grid — stand by (up to 60 s).",
         ))
 
         async with ctx.typing():
@@ -195,7 +261,7 @@ class Fabrication(commands.Cog):
         status = await v2.send(ctx, v2.info(
             "↻  Rotation Array Engaged",
             f"Three-view holographic rotation of: **{description}**\n"
-            "-# Generating front, side, and 3/4 views — approximately 30 seconds.",
+            "-# Generating front, side, and 3/4 views — up to 90 seconds.",
         ))
 
         async with ctx.typing():
