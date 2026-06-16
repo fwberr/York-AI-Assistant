@@ -1,0 +1,56 @@
+2026-06-16T04:05:29.623331645Z Using cached aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+2026-06-16T04:05:29.624362749Z Using cached annotated_types-0.7.0-py3-none-any.whl (13 kB)
+2026-06-16T04:05:29.625384792Z Using cached attrs-26.1.0-py3-none-any.whl (67 kB)
+2026-06-16T04:05:29.626453487Z Using cached frozenlist-1.8.0-cp314-cp314-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (231 kB)
+2026-06-16T04:05:29.627633514Z Using cached h11-0.16.0-py3-none-any.whl (37 kB)
+2026-06-16T04:05:29.628683438Z Using cached idna-3.18-py3-none-any.whl (65 kB)
+2026-06-16T04:05:29.629745202Z Using cached propcache-0.5.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (61 kB)
+2026-06-16T04:05:29.630821327Z Using cached tqdm-4.68.2-py3-none-any.whl (78 kB)
+2026-06-16T04:05:29.631945882Z Using cached typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+2026-06-16T04:05:29.632972996Z Using cached audioop_lts-0.2.2-cp313-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (85 kB)
+2026-06-16T04:05:29.634094271Z Using cached certifi-2026.5.20-py3-none-any.whl (134 kB)
+2026-06-16T04:05:29.635210127Z Using cached sniffio-1.3.1-py3-none-any.whl (10 kB)
+2026-06-16T04:05:29.716065747Z Installing collected packages: typing-extensions, tqdm, sniffio, python-dotenv, propcache, multidict, jiter, idna, h11, frozenlist, distro, certifi, audioop-lts, attrs, annotated-types, aiohappyeyeballs, yarl, typing-inspection, pydantic-core, httpcore, anyio, aiosignal, pydantic, httpx, aiohttp, openai, discord.py
+2026-06-16T04:05:32.920179784Z 
+2026-06-16T04:05:32.923294275Z Successfully installed aiohappyeyeballs-2.6.2 aiohttp-3.14.1 aiosignal-1.4.0 annotated-types-0.7.0 anyio-4.14.0 attrs-26.1.0 audioop-lts-0.2.2 certifi-2026.5.20 discord.py-2.7.1 distro-1.9.0 frozenlist-1.8.0 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.18 jiter-0.15.0 multidict-6.7.1 openai-2.41.1 propcache-0.5.2 pydantic-2.13.4 pydantic-core-2.46.4 python-dotenv-1.2.2 sniffio-1.3.1 tqdm-4.68.2 typing-extensions-4.15.0 typing-inspection-0.4.2 yarl-1.24.2
+2026-06-16T04:05:32.928353371Z 
+2026-06-16T04:05:32.928364191Z [notice] A new release of pip is available: 25.3 -> 26.1.2
+2026-06-16T04:05:32.928367351Z [notice] To update, run: pip install --upgrade pip
+2026-06-16T04:05:38.498879481Z ==> Uploading build...
+2026-06-16T04:05:42.786609326Z ==> Uploaded in 2.2s. Compression took 2.1s
+2026-06-16T04:05:42.861700204Z ==> Build successful 🎉
+2026-06-16T04:05:47.534543739Z ==> Deploying...
+2026-06-16T04:05:47.720077893Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2026-06-16T04:05:58.079205044Z ==> Running 'python bot/york.py'
+2026-06-16T04:06:06.789395006Z DATA_DIR /data is not writable, trying fallback…
+2026-06-16T04:06:07.690866272Z 2026-06-16 04:06:07,690 | WARNING | york | OPENAI_API_KEY missing — AI conversation will be disabled.
+2026-06-16T04:06:07.776331542Z 2026-06-16 04:06:07,776 | INFO    | york.keepalive | Keep-alive server listening on http://0.0.0.0:10000
+2026-06-16T04:06:07.776703481Z 2026-06-16 04:06:07,776 | WARNING | discord.client | PyNaCl is not installed, voice will NOT be supported
+2026-06-16T04:06:07.776727751Z 2026-06-16 04:06:07,776 | WARNING | discord.client | davey is not installed, voice will NOT be supported
+2026-06-16T04:06:07.777007648Z 2026-06-16 04:06:07,776 | INFO    | discord.client | logging in using static token
+2026-06-16T04:06:08.245197983Z 2026-06-16 04:06:08,244 | INFO    | aiohttp.access | 127.0.0.1 [16/Jun/2026:04:06:08 +0000] "HEAD / HTTP/1.1" 200 153 "-" "Go-http-client/1.1"
+2026-06-16T04:06:14.183619145Z 2026-06-16 04:06:14,183 | INFO    | york | Loaded extension: york.cogs.conversation
+2026-06-16T04:06:14.280159251Z 2026-06-16 04:06:14,279 | INFO    | york | Loaded extension: york.cogs.moderation
+2026-06-16T04:06:14.39029936Z 2026-06-16 04:06:14,390 | INFO    | york | Loaded extension: york.cogs.insights
+2026-06-16T04:06:14.482730291Z 2026-06-16 04:06:14,482 | INFO    | york | Loaded extension: york.cogs.fun
+2026-06-16T04:06:14.677098283Z 2026-06-16 04:06:14,676 | INFO    | york | Loaded extension: york.cogs.economy
+2026-06-16T04:06:14.680203884Z 2026-06-16 04:06:14,680 | INFO    | york | Loaded extension: york.cogs.fishing
+2026-06-16T04:06:14.68477796Z 2026-06-16 04:06:14,684 | INFO    | york | Loaded extension: york.cogs.starboard
+2026-06-16T04:06:14.686809807Z 2026-06-16 04:06:14,686 | INFO    | york | Loaded extension: york.cogs.proactive
+2026-06-16T04:06:14.778221874Z 2026-06-16 04:06:14,778 | INFO    | york | Loaded extension: york.cogs.fabrication
+2026-06-16T04:06:14.780392874Z 2026-06-16 04:06:14,780 | INFO    | york | Loaded extension: york.cogs.help_cog
+2026-06-16T04:06:15.430310399Z 2026-06-16 04:06:15,428 | INFO    | york | Synced 56 slash commands
+2026-06-16T04:06:15.938229391Z 2026-06-16 04:06:15,938 | INFO    | discord.gateway | Shard ID None has connected to Gateway (Session ID: b9766b181374ba03b3d7245d23636675).
+2026-06-16T04:06:18.553764822Z ==> Your service is live 🎉
+2026-06-16T04:06:18.770684421Z ==> 
+2026-06-16T04:06:18.774607218Z ==> ///////////////////////////////////////////////////////////
+2026-06-16T04:06:18.776976364Z ==> 
+2026-06-16T04:06:18.78023828Z ==> Available at your primary URL https://york-ai-assistant-1.onrender.com
+2026-06-16T04:06:18.783076448Z ==> 
+2026-06-16T04:06:18.785628702Z ==> ///////////////////////////////////////////////////////////
+2026-06-16T04:06:18.390717558Z 2026-06-16 04:06:18,390 | INFO    | york | York online as York#2771 (id=1496154816206864434)
+2026-06-16T04:06:18.642762069Z 2026-06-16 04:06:18,642 | INFO    | aiohttp.access | 127.0.0.1 [16/Jun/2026:04:06:18 +0000] "GET / HTTP/1.1" 200 168 "-" "Go-http-client/2.0"
+2026-06-16T04:06:49.544866743Z 2026-06-16 04:06:49,544 | INFO    | york.fabrication | Using fal.ai (FLUX.1-schnell) for image generation
+2026-06-16T04:06:49.913493363Z 2026-06-16 04:06:49,913 | WARNING | york.fabrication | fal.ai returned 403: {"detail": "User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."}
+2026-06-16T04:06:49.913941123Z 2026-06-16 04:06:49,913 | WARNING | york.fabrication | fal.ai failed, trying Stability AI
+2026-06-16T04:06:49.913965473Z 2026-06-16 04:06:49,913 | ERROR   | york.fabrication | No image provider succeeded — set FAL_KEY (fal.ai, free signup) or STABILITY_API_KEY (platform.stability.ai, 25 free credits)

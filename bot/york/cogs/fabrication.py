@@ -76,66 +76,58 @@ def _schematic_prompt(description: str, angle: str = "isometric 3D view") -> str
 # Image generation
 #
 # Provider chain (first available wins):
-#   1. fal.ai — FLUX.1-schnell (free credits on signup, no credit card needed)
-#      Sign up free at fal.ai → API Keys → copy key → set FAL_KEY as secret.
+#   1. Segmind — SDXL (100 free images/day, no credit card needed)
+#      Sign up free at segmind.com → API → copy key → set SEGMIND_API_KEY.
 #   2. Stability AI — stable-image/generate/core (25 free credits on signup)
-#      Sign up free at platform.stability.ai → set STABILITY_API_KEY as secret.
+#      Sign up free at platform.stability.ai → set STABILITY_API_KEY.
 #   3. Cloudflare Workers AI — Flux-1-Schnell (backup, needs CF account)
 #      Set CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN as secrets.
 # ---------------------------------------------------------------------------
 
-# ── fal.ai ───────────────────────────────────────────────────────────────────
-_FAL_KEY = os.environ.get("FAL_KEY", "")
-_FAL_URL = "https://fal.run/fal-ai/flux/schnell"
+# ── Segmind ──────────────────────────────────────────────────────────────────
+_SEGMIND_KEY = os.environ.get("SEGMIND_API_KEY", "")
+_SEGMIND_URL = "https://api.segmind.com/v1/sdxl1.0-txt2img"
 
 
-async def _generate_via_fal(prompt: str) -> discord.File | None:
-    """Generate an image using fal.ai FLUX.1-schnell (free credits, no CC)."""
+async def _generate_via_segmind(prompt: str) -> discord.File | None:
+    """Generate an image using Segmind SDXL (100 free images/day, no CC)."""
     headers = {
-        "Authorization": f"Key {_FAL_KEY}",
-        "Content-Type":  "application/json",
+        "x-api-key":    _SEGMIND_KEY,
+        "Content-Type": "application/json",
     }
     payload = {
         "prompt":               prompt,
-        "image_size":           "square_hd",
-        "num_inference_steps":  4,
-        "num_images":           1,
+        "negative_prompt":      "blurry, low quality, watermark, ugly",
+        "samples":              1,
+        "scheduler":            "UniPC",
+        "num_inference_steps":  20,
+        "guidance_scale":       7.5,
+        "img_width":            512,
+        "img_height":           512,
+        "base64":               False,
     }
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                _FAL_URL,
+                _SEGMIND_URL,
                 json=payload,
                 headers=headers,
                 timeout=aiohttp.ClientTimeout(total=90),
             ) as resp:
                 if resp.status != 200:
                     body = await resp.text()
-                    log.warning("fal.ai returned %s: %s", resp.status, body[:300])
+                    log.warning("Segmind returned %s: %s", resp.status, body[:300])
                     return None
-                data = await resp.json(content_type=None)
+                raw = await resp.read()
 
-        images = data.get("images", [])
-        if not images:
-            log.warning("fal.ai returned no images")
+        if len(raw) < 100:
+            log.warning("Segmind returned suspiciously small response (%d bytes)", len(raw))
             return None
-        image_url = images[0].get("url", "")
-        if not image_url:
-            return None
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                image_url,
-                timeout=aiohttp.ClientTimeout(total=30),
-            ) as img_resp:
-                if img_resp.status != 200:
-                    return None
-                raw = await img_resp.read()
 
         return discord.File(io.BytesIO(raw), filename="schematic.png")
 
     except Exception as exc:
-        log.exception("fal.ai image generation failed: %s", exc)
+        log.exception("Segmind image generation failed: %s", exc)
         return None
 
 
@@ -211,13 +203,13 @@ async def _generate_via_cloudflare(prompt: str) -> discord.File | None:
 
 # ── Public entry point ───────────────────────────────────────────────────────
 async def _generate_image(prompt: str) -> discord.File | None:
-    """Try fal.ai → Stability AI → Cloudflare, stopping at first success."""
-    if _FAL_KEY:
-        log.info("Using fal.ai (FLUX.1-schnell) for image generation")
-        result = await _generate_via_fal(prompt)
+    """Try Segmind → Stability AI → Cloudflare, stopping at first success."""
+    if _SEGMIND_KEY:
+        log.info("Using Segmind SDXL for image generation")
+        result = await _generate_via_segmind(prompt)
         if result is not None:
             return result
-        log.warning("fal.ai failed, trying Stability AI")
+        log.warning("Segmind failed, trying Stability AI")
 
     if _STABILITY_KEY:
         log.info("Using Stability AI for image generation")
@@ -234,8 +226,8 @@ async def _generate_image(prompt: str) -> discord.File | None:
         log.warning("Cloudflare AI failed")
 
     log.error(
-        "No image provider succeeded — set FAL_KEY (fal.ai, free signup) "
-        "or STABILITY_API_KEY (platform.stability.ai, 25 free credits)"
+        "No image provider succeeded — set SEGMIND_API_KEY (segmind.com, "
+        "100 free images/day, no CC) to enable image generation"
     )
     return None
 
