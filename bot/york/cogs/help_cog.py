@@ -39,7 +39,7 @@ CATEGORIES = {
         "Look around the server.",
         [
             ("Overview", "`!serverinfo`, `!members`, `!channels`"),
-            ("People", "`!userinfo [@user]`, `!avatar [@user]`"),
+            ("People", "`!userinfo [@user]`, `!avatar [@user]`, `!banner [@user]`"),
             ("Roles", "`!roles` (interactive dropdown)"),
         ],
     ),
@@ -57,9 +57,12 @@ CATEGORIES = {
         [
             ("Earn", "`!daily` (every ~22h), passive XP from chatting, level-up bonuses, `!fish`"),
             ("Send & Rob", "`!pay @user <amount|all>`, `!rob @user` (35% success · 5-min cooldown if caught)"),
+            ("Fight", "`!fight @user` — challenge someone; random winner earns 50–500 coins"),
             ("Coinflip", "`!coinflip <bet> [heads|tails]` — double or nothing"),
             ("Gamble", "`!gamble <bet|all>` — random 50/50"),
-            ("Blackjack", "`!blackjack <bet|all>` — Hit / Stand / Double vs the dealer"),
+            ("Slots", "`!slots <bet|all>` — spin 3 reels; payouts from 0.5× up to 20×"),
+            ("Blackjack", "`!blackjack <bet|all>` — Hit / Stand / Double Down vs the dealer"),
+            ("Horse Racing", "`!race <bet|all>` — pick a horse, watch the race live, win pays 2×"),
         ],
     ),
     "Shop & Inventory": (

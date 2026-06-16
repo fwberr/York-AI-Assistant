@@ -575,17 +575,29 @@ class Economy(commands.Cog):
             await v2.send(ctx, v2.danger("Not Enough Coins", f"You only have **{bal:,}** coins."))
             return
 
+        # Deduct bet up front
+        p["coins"] = bal - amount
+        _save(d)
+
+        # Send spinning message, then animate for ~5 seconds
+        msg = await v2.send(ctx, _slots_spin_embed(amount))
+        for _ in range(5):
+            await asyncio.sleep(0.9)
+            await v2.edit(msg, _slots_spin_embed(amount))
+
+        # Final spin — determine result
         reels = _spin()
         outcome, mult = _eval_spin(reels)
         winnings = int(amount * mult)
         net = winnings - amount
 
-        p["coins"] = bal - amount + winnings
-        _grant_xp(p, 3 if net >= 0 else 1)
-        _save(d)
+        d2 = _load(); p2 = _profile(d2, ctx.author.id)
+        p2["coins"] = p2.get("coins", 0) + winnings
+        _grant_xp(p2, 3 if net >= 0 else 1)
+        _save(d2)
 
         view = _SlotsView(player=ctx.author, bet=amount)
-        await v2.send(ctx, _slots_embed(ctx.author, reels, outcome, net, amount, p["coins"]), view=view)
+        await v2.edit(msg, _slots_embed(ctx.author, reels, outcome, net, amount, p2["coins"]), view=view)
 
     # ---------------- race ----------------
     @commands.hybrid_command(name="race", description="Bet on a horse race. Pick your horse and cross your fingers.")
@@ -646,15 +658,22 @@ class Economy(commands.Cog):
         _save(d)
 
         chosen = _HORSES[view.chosen]
-        await v2.edit(msg, v2.build(
-            "info", "🏇  Racing...",
-            f"You backed {chosen['emoji']} **{chosen['name']}** — the race is on!",
-            footer=f"{settings.bot_name} · built by {settings.creator}",
-        ))
-        await asyncio.sleep(2)
 
+        # Determine winner and pre-build animation frames
         winner_idx = _race_result()
         winner_horse = _HORSES[winner_idx]
+        frames = _race_frames(winner_idx)
+
+        # Animate the race
+        for tick, positions in enumerate(frames):
+            progress = _race_progress_text(positions)
+            header = f"You backed {chosen['emoji']} **{chosen['name']}** — race is on!\n\n"
+            await v2.edit(msg, v2.build(
+                "info", "🏇  Racing…",
+                header + progress,
+                footer=f"{settings.bot_name} · built by {settings.creator}",
+            ))
+            await asyncio.sleep(0.9)
 
         others = [i for i in range(len(_HORSES)) if i != winner_idx]
         random.shuffle(others)
@@ -774,6 +793,17 @@ def _eval_spin(reels: list[str]) -> tuple[str, float]:
     return "No match", 0.0
 
 
+def _slots_spin_embed(bet: int) -> discord.Embed:
+    r = random.choices(_SLOT_SYMS, weights=_SLOT_W, k=3)
+    return v2.build(
+        "info",
+        f"{settings.emoji.spark}  Slot Machine",
+        f"┃ {'  '.join(r)} ┃\n\n🎰 *Spinning…*",
+        fields=[("Bet", f"{bet:,}c")],
+        footer=f"{settings.bot_name} · built by {settings.creator}",
+    )
+
+
 def _slots_embed(
     player: discord.abc.User,
     reels: list[str],
@@ -820,6 +850,41 @@ def _race_result() -> int:
         base = h["speed"] * 0.4 + h["stamina"] * 0.3 + h["luck"] * 0.3
         weights.append(max(0.5, base + random.gauss(0, 1.5)))
     return random.choices(range(len(_HORSES)), weights=weights, k=1)[0]
+
+
+def _race_frames(winner_idx: int, ticks: int = 5, track: int = 12) -> list[list[int]]:
+    """Return `ticks` animation frames of horse positions (0–track).
+    The winner is guaranteed to reach `track` on the final frame."""
+    speeds = [
+        (h["speed"] * 0.4 + h["stamina"] * 0.3 + h["luck"] * 0.3) / 10
+        for h in _HORSES
+    ]
+    total = sum(speeds)
+    positions = [0.0] * len(_HORSES)
+    frames = []
+    for tick in range(ticks):
+        for i in range(len(_HORSES)):
+            step = (speeds[i] / total) * track * (1.3 / ticks) + random.uniform(-0.4, 0.6)
+            positions[i] = min(track, max(0.0, positions[i] + step))
+        if tick == ticks - 1:
+            positions[winner_idx] = float(track)
+            for i in range(len(_HORSES)):
+                if i != winner_idx:
+                    positions[i] = min(float(track) - 1.0, positions[i])
+        frames.append([min(track, max(0, int(p))) for p in positions])
+    return frames
+
+
+def _race_progress_text(positions: list[int], track: int = 12) -> str:
+    lines = []
+    for i, h in enumerate(_HORSES):
+        pos = min(track, positions[i])
+        at_end = pos >= track
+        marker = "🏆" if at_end else "🏇"
+        bar = "▬" * pos + marker + "·" * max(0, track - pos - (0 if at_end else 1))
+        flag = " 🏁" if at_end else ""
+        lines.append(f"{h['emoji']} **{h['name']:<14}** `{bar}`{flag}")
+    return "\n".join(lines)
 
 
 class _BlackjackView(discord.ui.View):
