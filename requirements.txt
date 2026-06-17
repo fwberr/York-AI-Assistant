@@ -2,8 +2,3 @@ discord.py>=2.7.1
 openai>=2.32.0
 aiohttp>=3.13.5
 python-dotenv>=1.2.2
-aiohttp
-discord.py
-openai
-python-dotenv
-openai
