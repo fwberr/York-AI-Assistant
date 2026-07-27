@@ -73,49 +73,56 @@ _GIF_ALIAS = {"pet": "pat"}
 
 
 async def fetch_gif(action: str) -> str | None:
+    """Fetch a reaction GIF from otakugifs.xyz (anime-style reactions)."""
     cat = _GIF_ALIAS.get(action.lower(), action.lower())
     if cat not in GIF_CATEGORIES:
         return None
-    url = f"https://nekos.best/api/v2/{cat}"
+    url = "https://api.otakugifs.xyz/gif"
+    params = {"reaction": cat}
     try:
         async with aiohttp.ClientSession() as s:
-            async with s.get(url, timeout=aiohttp.ClientTimeout(total=6)) as r:
+            async with s.get(url, params=params, timeout=aiohttp.ClientTimeout(total=6)) as r:
                 if r.status != 200:
-                    return None
+                    # Fall back to Giphy search for this reaction
+                    return await fetch_gif_search(f"anime {cat}")
                 data = await r.json()
-                results = data.get("results") or []
-                if not results:
-                    return None
-                return results[0].get("url")
+                return data.get("url") or None
     except Exception:
-        return None
+        return await fetch_gif_search(f"anime {cat}")
 
 
 _fetch_gif = fetch_gif
 
 
 async def fetch_gif_search(query: str) -> str | None:
-    """Search Tenor for any GIF by keyword (character names, scenes, etc.)."""
+    """Search Giphy for any GIF by keyword (character names, scenes, etc.)."""
     q = (query or "").strip()
     if not q:
         return None
-    url = "https://g.tenor.com/v1/search"
-    params = {"q": q, "key": "LIVDSRZULELA", "limit": 8, "contentfilter": "low"}
+    url = "https://api.giphy.com/v1/gifs/search"
+    params = {
+        "q": q,
+        "api_key": "0UTRbFtkMxAplrohufYco5IY74U8hOes",
+        "limit": 10,
+        "rating": "r",
+        "lang": "en",
+    }
     try:
         async with aiohttp.ClientSession() as s:
             async with s.get(url, params=params, timeout=aiohttp.ClientTimeout(total=6)) as r:
                 if r.status != 200:
                     return None
                 data = await r.json()
-                results = data.get("results") or []
+                results = data.get("data") or []
                 if not results:
                     return None
-                pick = random.choice(results[:8])
-                media = pick.get("media", [{}])[0]
+                pick = random.choice(results[:10])
+                # Return the direct GIF URL (downsized for Discord embeds)
+                images = pick.get("images", {})
                 return (
-                    media.get("gif", {}).get("url")
-                    or media.get("mediumgif", {}).get("url")
-                    or media.get("tinygif", {}).get("url")
+                    images.get("downsized", {}).get("url")
+                    or images.get("original", {}).get("url")
+                    or pick.get("url")
                 )
     except Exception:
         return None
