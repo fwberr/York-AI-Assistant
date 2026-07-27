@@ -96,13 +96,16 @@ _fetch_gif = fetch_gif
 
 async def fetch_gif_search(query: str) -> str | None:
     """Search Giphy for any GIF by keyword (character names, scenes, etc.)."""
+    import os
     q = (query or "").strip()
     if not q:
         return None
+    # Prefer a user-supplied key (set GIPHY_API_KEY secret) to avoid rate limits
+    api_key = os.getenv("GIPHY_API_KEY") or "0UTRbFtkMxAplrohufYco5IY74U8hOes"
     url = "https://api.giphy.com/v1/gifs/search"
     params = {
         "q": q,
-        "api_key": "0UTRbFtkMxAplrohufYco5IY74U8hOes",
+        "api_key": api_key,
         "limit": 10,
         "rating": "r",
         "lang": "en",

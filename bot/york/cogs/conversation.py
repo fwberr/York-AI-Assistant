@@ -46,18 +46,19 @@ _IMG_TOKEN = re.compile(r"\[img:([^\]\n]{1,80})\]")
 
 
 def _resolve_gif_action(token: str) -> str | None:
-    """Return a valid GIF category from a token that may be multi-word.
+    """Return a valid GIF category only for single-word reaction tokens.
 
-    e.g. 'astolfo wink' → 'wink', 'hug' → 'hug', 'pet' → 'pat'
+    Multi-word queries (e.g. 'astolfo blush', 'cat sleeping') are sent to
+    GIF search so the full intent is preserved — extracting just 'blush'
+    from 'astolfo blush' would return a generic GIF, not an Astolfo one.
     """
     token = token.strip().lower()
     alias = {"pet": "pat"}
-    # Try full token first, then each word right-to-left
-    candidates = [token] + list(reversed(token.split()))
-    for c in candidates:
-        c = alias.get(c, c)
-        if c in GIF_CATEGORIES:
-            return c
+    words = token.split()
+    # Only resolve to a reaction category when the token is a single word
+    if len(words) == 1:
+        c = alias.get(token, token)
+        return c if c in GIF_CATEGORIES else None
     return None
 
 
@@ -234,7 +235,11 @@ class Conversation(commands.Cog):
 
         text_out, gif_urls = await _extract_media(answer)
         if not text_out and not gif_urls:
-            text_out = answer
+            # If the AI only sent media tokens and all fetches failed, don't
+            # echo the raw token text back — just send nothing this turn.
+            has_media_tokens = bool(_GIF_TOKEN.search(answer) or _IMG_TOKEN.search(answer))
+            if not has_media_tokens:
+                text_out = answer
 
         chunks = [text_out[i:i + 1900] for i in range(0, max(len(text_out), 1), 1900)]
         for i, chunk in enumerate(chunks):
