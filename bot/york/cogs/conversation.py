@@ -41,7 +41,7 @@ def _has_name(text: str) -> bool:
     return _NAME_REF.search(text) is not None
 
 
-_GIF_TOKEN = re.compile(r"\[gif:([^\]\n]{1,60})\]")
+_GIF_TOKEN = re.compile(r"\[t?gif:([^\]\n]{1,60})\]")
 _IMG_TOKEN = re.compile(r"\[img:([^\]\n]{1,80})\]")
 
 
